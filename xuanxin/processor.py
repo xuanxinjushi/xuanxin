@@ -23,6 +23,7 @@ from xuanxin.footnotes import reorder_footnotes_before_chapter_poster
 from xuanxin.includes import find_peanut_config, load_config, process_includes
 from xuanxin.latex import protect_latex, restore_latex
 from xuanxin.note_sections import process_note_sections
+from xuanxin.section_nav import inject_section_nav
 
 # First markdown H1, optional Pandoc attrs e.g. `# Chapter 1: 山 {-}`
 _FIRST_H1_LINE_RE = re.compile(r"^#\s+(.+?)(?:\s+\{[^}]*\})?\s*$")
@@ -122,6 +123,7 @@ class MarkdownProcessor:
         html = self._md.convert(protected)
         html = restore_latex(html, placeholders)
         html = reorder_footnotes_before_chapter_poster(html)
+        html = inject_section_nav(html)
         self._md.reset()
 
         return {

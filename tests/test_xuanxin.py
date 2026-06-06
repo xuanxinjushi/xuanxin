@@ -232,6 +232,41 @@ def test_note_sections():
         assert "特蕾西" in review_html
 
 
+def test_section_nav():
+    md = """# Chapter 4: 火 {-}
+
+*篝火、烛火、火锅*
+
+> quote
+
+## 篝火
+
+Section one.
+
+## 烛火
+
+Section two.
+
+## 火锅
+
+Section three.
+"""
+    html = process_string(md)["content"]
+    assert 'class="xuanxin-section-nav"' in html
+    assert 'class="xuanxin-section-nav-btn"' in html
+    assert 'href="#_' in html
+    assert ">篝火</a>" in html
+    assert ">烛火</a>" in html
+    assert ">火锅</a>" in html
+    assert "<p><em>篝火" not in html
+
+    ch4 = Path(__file__).resolve().parents[2] / "chapter4-huo" / "chapter4_zh.md"
+    if ch4.is_file():
+        ch4_html = MarkdownProcessor().process_file(ch4)["content"]
+        assert 'class="xuanxin-section-nav"' in ch4_html
+        assert ch4_html.count("xuanxin-section-nav-btn") == 3
+
+
 def test_conditional_include_if_true(tmp_path):
     snippet = tmp_path / "snippet.md"
     snippet.write_text("Included paragraph.\n", encoding="utf-8")

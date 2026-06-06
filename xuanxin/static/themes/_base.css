@@ -237,7 +237,7 @@ body {
 }
 
 .prose h1 { font-size: 1.8rem; }
-.prose h2 { font-size: 1.5rem; border-bottom: 1px solid var(--color-border); padding-bottom: 0.3rem; }
+.prose h2 { font-size: 1.5rem; border-bottom: 1px solid var(--color-border); padding-bottom: 0.3rem; scroll-margin-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)); }
 .prose h3 { font-size: 1.25rem; }
 
 .prose p { margin: 0 0 var(--prose-line-gap); }
@@ -359,7 +359,8 @@ body.xuanxin-paginated .prose .fullpage-image {
   }
 
   .page-nav,
-  .chapter-nav {
+  .chapter-nav,
+  .xuanxin-section-nav {
     display: none !important;
   }
 }
@@ -728,6 +729,75 @@ body.xuanxin-paginated .xuanxin-page .image-background-stack {
 }
 
 .site-footer a { color: var(--color-primary); }
+
+/* Chapter section quick nav (subtitle → H2 jump buttons) */
+.xuanxin-section-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin: 0.75rem 0 1.35rem;
+}
+
+.xuanxin-section-nav--floating {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 250;
+  margin: 0;
+  padding: 0.65rem 1rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
+  background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid var(--color-border);
+  box-shadow: 0 -4px 24px var(--color-shadow);
+}
+
+body.xuanxin-has-section-nav {
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+body.xuanxin-has-section-nav .site-footer {
+  margin-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+.xuanxin-section-nav-btn {
+  display: inline-block;
+  padding: 0.38rem 0.95rem;
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  font-weight: 500;
+  font-style: normal;
+  line-height: 1.3;
+  text-decoration: none;
+  color: var(--color-primary);
+  background: var(--color-surface);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.xuanxin-section-nav-btn:hover,
+.xuanxin-section-nav-btn:focus-visible {
+  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary) 35%, transparent);
+  outline: none;
+}
+
+.prose h2.xuanxin-section-target {
+  animation: xuanxin-section-flash 1.6s ease;
+}
+
+@keyframes xuanxin-section-flash {
+  0%, 100% { background: transparent; }
+  18% { background: color-mix(in srgb, var(--color-primary) 14%, transparent); }
+  45% { background: color-mix(in srgb, var(--color-primary) 8%, transparent); }
+}
 
 /* Book table of contents */
 .book-toc { margin: 2rem 0 3rem; }
