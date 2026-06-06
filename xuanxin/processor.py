@@ -10,8 +10,39 @@ from typing import Any
 import frontmatter
 import markdown
 
-from xuanxin.extensions import ImageClassesExtension, VideoEmbedExtension
+from xuanxin.extensions import (
+    BackslashBlankLineExtension,
+    ImageAttributesExtension,
+    ImageClassesExtension,
+    TpImageExtension,
+    VideoEmbedExtension,
+)
 from xuanxin.latex import protect_latex, restore_latex
+
+# First markdown H1, optional Pandoc attrs e.g. `# Chapter 1: 山 {-}`
+_FIRST_H1_LINE_RE = re.compile(r"^#\s+(.+?)(?:\s+\{[^}]*\})?\s*$")
+
+
+def _extract_first_h1_title(content: str) -> str | None:
+    for line in content.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        match = _FIRST_H1_LINE_RE.match(stripped)
+        return match.group(1).strip() if match else None
+    return None
+
+
+def _strip_first_h1(content: str) -> str:
+    lines = content.splitlines(keepends=True)
+    out: list[str] = []
+    removed = False
+    for line in lines:
+        if not removed and _FIRST_H1_LINE_RE.match(line.strip()):
+            removed = True
+            continue
+        out.append(line)
+    return "".join(out).lstrip("\n")
 
 
 def _default_extensions() -> list[Any]:
@@ -23,7 +54,10 @@ def _default_extensions() -> list[Any]:
         "markdown.extensions.fenced_code",
         "markdown.extensions.attr_list",
         "markdown.extensions.nl2br",
+        TpImageExtension(),
+        BackslashBlankLineExtension(),
         ImageClassesExtension(),
+        ImageAttributesExtension(),
         VideoEmbedExtension(),
     ]
 
@@ -55,17 +89,26 @@ class MarkdownProcessor:
         self, content: str, *, source_file: str | None = None
     ) -> dict[str, Any]:
         post = frontmatter.loads(content)
-        metadata = self._parse_metadata(post.metadata)
+        metadata = dict(post.metadata)
+        body = post.content
 
-        protected, placeholders = protect_latex(post.content)
+        if not metadata.get("title"):
+            extracted = _extract_first_h1_title(body)
+            if extracted:
+                metadata["title"] = extracted
+                body = _strip_first_h1(body)
+
+        parsed = self._parse_metadata(metadata)
+
+        protected, placeholders = protect_latex(body)
         html = self._md.convert(protected)
         html = restore_latex(html, placeholders)
         self._md.reset()
 
         return {
-            "metadata": metadata,
+            "metadata": parsed,
             "content": html,
-            "raw_content": post.content,
+            "raw_content": body,
             "source_file": source_file,
         }
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ title }} — {{ site_title }}</title>
+  <title>{% if site_title %}{{ title }} — {{ site_title }}{% else %}{{ title }}{% endif %}</title>
   {% if description %}<meta name="description" content="{{ description }}">{% endif %}
   <link rel="stylesheet" href="{{ assets_prefix }}assets/theme.css">
   {% if theme and theme != site_theme %}<link rel="stylesheet" href="{{ assets_prefix }}assets/themes/{{ theme }}.css">{% endif %}
@@ -19,14 +19,18 @@
   {% endif %}
 </head>
 <body>
+  {% if site_title or not standalone %}
   <header class="site-header">
     <div class="container">
+      {% if site_title %}
       <a class="site-brand" href="{{ assets_prefix }}{% if standalone %}#{% else %}index.html{% endif %}">{{ site_title }}</a>
+      {% endif %}
       {% if not standalone %}<nav class="site-nav">
         <a href="{{ assets_prefix }}index.html">All posts</a>
       </nav>{% endif %}
     </div>
   </header>
+  {% endif %}
 
   <main class="container">
     <article class="post">

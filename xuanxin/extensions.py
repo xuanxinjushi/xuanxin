@@ -1,4 +1,4 @@
-"""Markdown extensions: image classes, video embeds."""
+"""Markdown extensions: bubble image attributes, tp_image, video embeds."""
 
 from __future__ import annotations
 
@@ -6,7 +6,10 @@ import re
 
 from markdown.extensions import Extension
 from markdown.inlinepatterns import IMAGE_LINK_RE, ImageInlineProcessor
+from markdown.postprocessors import Postprocessor
 from markdown.preprocessors import Preprocessor
+
+from xuanxin.image_attrs import inject_tp_image_class, postprocess_image_html
 
 
 class ImageWithClassesProcessor(ImageInlineProcessor):
@@ -30,6 +33,67 @@ class ImageClassesExtension(Extension):
     def extendMarkdown(self, md):
         md.inlinePatterns.register(
             ImageWithClassesProcessor(IMAGE_LINK_RE, md), "image", 150
+        )
+
+
+class BackslashBlankLinePreprocessor(Preprocessor):
+    """Convert a lone ``\\`` line to a visible blank line (bubble: ``\\hfill\\break``)."""
+
+    def run(self, lines):
+        out: list[str] = []
+        for line in lines:
+            if line.strip() == "\\":
+                out.append('<div class="xuanxin-blank" aria-hidden="true"></div>')
+            else:
+                out.append(line)
+        return out
+
+
+class BackslashBlankLineExtension(Extension):
+    def extendMarkdown(self, md):
+        md.preprocessors.register(
+            BackslashBlankLinePreprocessor(md), "backslash_blank", 28
+        )
+
+
+class TpImagePreprocessor(Preprocessor):
+    """Remove **tp_image** marker and tag the following image as `.tp-image`."""
+
+    MARKER = "**tp_image**"
+
+    def run(self, lines):
+        out: list[str] = []
+        i = 0
+        while i < len(lines):
+            if lines[i].strip() == self.MARKER:
+                i += 1
+                while i < len(lines) and not lines[i].strip():
+                    i += 1
+                if i < len(lines):
+                    out.append(inject_tp_image_class(lines[i]))
+                    i += 1
+                continue
+            out.append(lines[i])
+            i += 1
+        return out
+
+
+class TpImageExtension(Extension):
+    def extendMarkdown(self, md):
+        md.preprocessors.register(TpImagePreprocessor(md), "tp_image", 30)
+
+
+class ImageAttributesPostprocessor(Postprocessor):
+    """Map bubble-style image attributes (width, alpha, .background, etc.) to HTML/CSS."""
+
+    def run(self, text):
+        return postprocess_image_html(text)
+
+
+class ImageAttributesExtension(Extension):
+    def extendMarkdown(self, md):
+        md.postprocessors.register(
+            ImageAttributesPostprocessor(md), "image_attributes", 25
         )
 
 

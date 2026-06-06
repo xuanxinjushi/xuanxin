@@ -107,7 +107,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     render.add_argument("file", help="Markdown file path")
     render.add_argument("-o", "--output", default="", help="Output directory (default: current directory)")
-    render.add_argument("-t", "--title", default="Blog", help="Site title shown in page header")
+    render.add_argument("-t", "--title", default="", help="Site title (optional; shown in header and page title suffix)")
     render.add_argument("--theme", default="default", help="Built-in theme (default, dark, minimal)")
     render.add_argument("--css", default="", help="Path to custom CSS file")
     render.add_argument("--no-mathjax", action="store_true", help="Disable MathJax for LaTeX")

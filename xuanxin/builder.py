@@ -93,7 +93,7 @@ def render_file(
     md_path: Path | str,
     *,
     output_dir: Path | None = None,
-    site_title: str = "Blog",
+    site_title: str = "",
     theme: str = "default",
     custom_css: Path | None = None,
     mathjax: bool = True,

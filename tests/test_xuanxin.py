@@ -79,3 +79,96 @@ def test_youtube_embed():
     result = process_string(md)
     assert "iframe" in result["content"]
     assert "dQw4w9WgXcQ" in result["content"]
+
+
+def test_tp_image_and_bubble_image_attrs():
+    md = """---
+title: Chapter
+---
+
+# Chapter 1
+
+**tp_image**
+
+![](img/shan.jpg){width=75% alpha=0.8}
+
+## Section
+
+Intro.
+
+![](img/quan.jpg){.background .bottom-right alpha=0.3 width=40% bottom-offset=1.0in}
+
+More text.
+
+## Next
+
+After.
+
+![A caption](img/x.jpg){.block width=80% align=center}
+"""
+    html = process_string(md)["content"]
+    assert "tp_image" not in html
+    assert "tp-image" in html
+    assert "tp-image-section" in html
+    assert 'src="img/shan.jpg"' in html
+    assert "opacity: 0.8" in html
+    assert "width: 75%" in html
+    assert "background" in html
+    assert "bottom-right" in html
+    assert "position: absolute" in html
+    assert "position: fixed" not in html
+    assert 'class="image-background-section"' in html
+    assert "bottom: 1.0in" in html
+    assert '<figure class="image-block">' in html
+    assert "<figcaption>A caption</figcaption>" in html
+
+
+def test_inject_tp_image_class():
+    from xuanxin.image_attrs import inject_tp_image_class
+
+    assert inject_tp_image_class("![](img/a.jpg){width=50%}") == "![](img/a.jpg){.tp-image width=50%}"
+    assert inject_tp_image_class("![](img/a.jpg)") == "![](img/a.jpg){.tp-image}"
+
+
+def test_backslash_blank_line():
+    md = """---
+title: Breaks
+---
+
+第一行。
+
+\\
+第二行。
+
+第三行。
+"""
+    html = process_string(md)["content"]
+    assert "xuanxin-blank" in html
+    assert "<p>\\" not in html
+    assert '<div class="xuanxin-blank"' in html
+    assert "<p>第二行。" in html
+    assert html.index("xuanxin-blank") < html.index("第二行")
+
+
+def test_title_from_first_h1_without_frontmatter():
+    md = """# Chapter 1: 山 {-}
+
+*泉水、泥土、石头*
+
+正文。
+"""
+    result = process_string(md)
+    assert result["metadata"]["title"] == "Chapter 1: 山"
+    assert "<h1" not in result["content"]
+    assert "泉水、泥土、石头" in result["content"]
+    assert "正文。" in result["content"]
+
+
+def test_render_chapter_without_blog_title(tmp_path):
+    md = tmp_path / "chapter1_zh.md"
+    md.write_text("# Chapter 1: 山 {-}\n\n正文。\n", encoding="utf-8")
+    out = render_file(md, output_dir=tmp_path)
+    html = out.read_text(encoding="utf-8")
+    assert "<title>Chapter 1: 山</title>" in html
+    assert "Blog" not in html
+    assert "site-header" not in html
