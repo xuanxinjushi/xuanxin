@@ -123,6 +123,18 @@ After.
     assert "<figcaption>A caption</figcaption>" in html
 
 
+def test_unwrap_fullpage_from_paragraph():
+    html = process_string("![](img/cover.jpg){.fullpage}\n")["content"]
+    assert '<p><div class="fullpage-image">' not in html
+    assert '<div class="fullpage-image">' in html
+
+
+def test_fullpage_height_percent_preserved_on_image():
+    html = process_string("![](img/a.jpg){.fullpage height=40%}\n")["content"]
+    assert "height: 40%" in html
+    assert "max-height:" not in html
+
+
 def test_bottom_right_background_keeps_adjacent_paragraphs_together():
     md = """## 泉水
 

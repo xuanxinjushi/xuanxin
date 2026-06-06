@@ -95,12 +95,12 @@ def _build_styles(attrs: dict[str, str], classes: set[str]) -> list[str]:
     is_bottom_right = "bottom-right" in classes
     bottom_offset = _resolve_bottom_offset(attrs) if is_background and is_bottom_right else "0"
 
-    if width and not is_background:
+    if width and not is_background and not is_fullpage:
         styles.append(f"width: {width}")
         styles.append("max-width: 100%")
         if not height:
             styles.append("height: auto")
-    if height and not is_background:
+    if height and not is_background and not is_fullpage:
         styles.append(f"height: {height}")
         if not width:
             styles.append("width: auto")
@@ -497,7 +497,17 @@ def wrap_tp_image_section(html: str) -> str:
     return alone.sub(r'<div class="tp-image-section">\1</div>', html)
 
 
+def unwrap_fullpage_blocks(html: str) -> str:
+    """Markdown wraps block-level fullpage divs in ``<p>`` — unwrap for valid HTML/DOM."""
+    fullpage_in_p = re.compile(
+        r'<p>\s*(<div class="fullpage-image">.*?</div>)\s*</p>',
+        re.IGNORECASE | re.DOTALL,
+    )
+    return fullpage_in_p.sub(r"\1", html)
+
+
 def postprocess_image_html(html: str) -> str:
     html = IMG_TAG_RE.sub(lambda m: transform_img_tag(m.group(0), m.group(1)), html)
     html = wrap_tp_image_section(html)
-    return wrap_background_sections(html)
+    html = wrap_background_sections(html)
+    return unwrap_fullpage_blocks(html)

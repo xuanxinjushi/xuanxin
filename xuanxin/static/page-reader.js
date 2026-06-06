@@ -59,46 +59,242 @@
 
   setupImageDownloadGuard();
 
-  function setupFullpageRotation() {
-    document.querySelectorAll(".fullpage-image img").forEach(function (img) {
-      if (img.dataset.rotateBound === "1") return;
-      img.dataset.rotateBound = "1";
-      img.setAttribute("role", "button");
-      img.setAttribute("tabindex", "0");
-      img.setAttribute(
-        "aria-label",
-        img.getAttribute("alt") || "Full-page image. Click to rotate."
-      );
-      img.setAttribute("title", "Click to rotate 90°");
+  var fullpageToolbar = null;
+  var fullpageLightbox = null;
+  var activeFullpageWrapper = null;
 
-      function rotateImage(event) {
-        if (event) {
-          event.preventDefault();
-          event.stopPropagation();
-        }
-        var wrapper = img.closest(".fullpage-image");
-        var current = parseInt(img.dataset.rotateDeg || "0", 10);
-        current = (current + 90) % 360;
-        img.dataset.rotateDeg = String(current);
-        img.style.transform = "rotate(" + current + "deg)";
-        if (wrapper) {
-          wrapper.classList.toggle(
-            "is-rotated-side",
-            current === 90 || current === 270
-          );
-        }
+  var FULLPAGE_EXPAND_ICON =
+    '<svg class="xuanxin-fullpage-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">' +
+    '<path fill="currentColor" d="M4 10V7a1 1 0 0 1 1-1h3a1 1 0 1 1 0 2H6v2a1 1 0 1 1-2 0zm9-5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v3a1 1 0 1 1-2 0V6h-2a1 1 0 0 1-1-1zm5 9a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-3a1 1 0 1 1 0-2h2v-2a1 1 0 0 1 1-1zM9 19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 1 1 2 0v2h2a1 1 0 0 1 1 1z"/>' +
+    "</svg>";
+
+  function readInlineRotation(img) {
+    var style = img.getAttribute("style") || "";
+    var match = style.match(/rotate\(([-\d.]+)deg\)/i);
+    if (!match) return 0;
+    var deg = Math.round(parseFloat(match[1])) % 360;
+    return deg < 0 ? deg + 360 : deg;
+  }
+
+  function clearInlineRotation(img) {
+    var style = img.getAttribute("style") || "";
+    style = style
+      .replace(/transform\s*:\s*rotate\([^;)]+\)\s*;?/gi, "")
+      .replace(/;\s*;/g, ";")
+      .trim();
+    if (style.endsWith(";")) style = style.slice(0, -1).trim();
+    if (style) img.setAttribute("style", style);
+    else img.removeAttribute("style");
+  }
+
+  function parseStyleDimension(style, prop) {
+    var match = style.match(new RegExp(prop + "\\s*:\\s*([^;]+)", "i"));
+    return match ? match[1].trim() : "";
+  }
+
+  function paginatedFullpagePageHeight(wrapper) {
+    var prose = wrapper.closest(".prose");
+    var width = prose ? prose.clientWidth : wrapper.clientWidth;
+    return width > 0 ? width * 1.414 : 0;
+  }
+
+  function layoutPaginatedFullpage(img, wrapper) {
+    var width = img.dataset.fullpageWidth || "";
+    var height = img.dataset.fullpageHeight || "";
+    var pageHeight = paginatedFullpagePageHeight(wrapper);
+
+    img.style.width = width || "100%";
+    img.style.maxWidth = "100%";
+    img.style.height = "auto";
+    img.style.maxHeight = "";
+
+    if (height && height.charAt(height.length - 1) === "%" && pageHeight > 0) {
+      var pct = parseFloat(height) / 100;
+      if (!Number.isNaN(pct) && pct > 0) {
+        img.style.maxHeight = String(Math.round(pageHeight * pct)) + "px";
       }
+    } else if (height && height !== "auto") {
+      img.style.maxHeight = height;
+    }
 
-      img.addEventListener("click", rotateImage);
-      img.addEventListener("keydown", function (event) {
-        if (event.key === "Enter" || event.key === " ") {
-          rotateImage(event);
-        }
-      });
+    applyFullpageTransform(img, wrapper);
+
+    window.requestAnimationFrame(function () {
+      var rect = img.getBoundingClientRect();
+      wrapper.style.minHeight = Math.ceil(rect.height) + "px";
     });
   }
 
-  setupFullpageRotation();
+  function initFullpageImages() {
+    document.querySelectorAll(".fullpage-image img").forEach(function (img) {
+      if (img.dataset.fullpageInited === "1") return;
+      img.dataset.fullpageInited = "1";
+      var style = img.getAttribute("style") || "";
+      img.dataset.fullpageWidth = parseStyleDimension(style, "width");
+      img.dataset.fullpageHeight = parseStyleDimension(style, "height");
+      img.dataset.rotateDeg = String(readInlineRotation(img));
+      clearInlineRotation(img);
+      img.style.cursor = "default";
+
+      var wrapper = img.closest(".fullpage-image");
+      function layout() {
+        if (!wrapper) return;
+        if (document.body.classList.contains("xuanxin-paginated")) {
+          layoutPaginatedFullpage(img, wrapper);
+        } else {
+          applyFullpageTransform(img, wrapper);
+        }
+      }
+
+      if (img.complete) layout();
+      else img.addEventListener("load", layout);
+    });
+  }
+
+  function syncLightboxRotation(img) {
+    if (!fullpageLightbox || fullpageLightbox.hidden || !img) return;
+    var lbImg = fullpageLightbox.querySelector(".xuanxin-fullpage-lightbox-img");
+    if (!lbImg) return;
+    var deg = parseInt(img.dataset.rotateDeg || "0", 10);
+    lbImg.style.transform = "rotate(" + deg + "deg)";
+    lbImg.classList.toggle("is-rotated-side", deg === 90 || deg === 270);
+  }
+
+  function applyFullpageTransform(img, wrapper) {
+    var deg = parseInt(img.dataset.rotateDeg || "0", 10);
+    img.style.transform = "rotate(" + deg + "deg)";
+    wrapper.classList.toggle("is-rotated-side", deg === 90 || deg === 270);
+    syncLightboxRotation(img);
+    if (document.body.classList.contains("xuanxin-paginated")) {
+      window.requestAnimationFrame(function () {
+        var rect = img.getBoundingClientRect();
+        wrapper.style.minHeight = Math.ceil(rect.height) + "px";
+      });
+    }
+  }
+
+  function ensureFullpageLightbox() {
+    if (fullpageLightbox) return fullpageLightbox;
+
+    fullpageLightbox = document.createElement("div");
+    fullpageLightbox.className = "xuanxin-fullpage-lightbox";
+    fullpageLightbox.hidden = true;
+    fullpageLightbox.innerHTML =
+      '<button type="button" class="xuanxin-fullpage-lightbox-backdrop" data-action="close" aria-label="Close"></button>' +
+      '<div class="xuanxin-fullpage-lightbox-stage" role="dialog" aria-modal="true" aria-label="Image preview">' +
+      '<img class="xuanxin-fullpage-lightbox-img" alt="" />' +
+      '<button type="button" class="xuanxin-fullpage-lightbox-close" data-action="close" aria-label="Close">×</button>' +
+      "</div>";
+    document.body.appendChild(fullpageLightbox);
+
+    fullpageLightbox.addEventListener("click", function (event) {
+      if (event.target.closest('[data-action="close"]')) {
+        closeFullpageLightbox();
+      }
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" && fullpageLightbox && !fullpageLightbox.hidden) {
+        closeFullpageLightbox();
+      }
+    });
+
+    return fullpageLightbox;
+  }
+
+  function openFullpageLightbox(img) {
+    var lightbox = ensureFullpageLightbox();
+    var lbImg = lightbox.querySelector(".xuanxin-fullpage-lightbox-img");
+    lbImg.src = img.currentSrc || img.src;
+    lbImg.alt = img.alt || "";
+    syncLightboxRotation(img);
+    lightbox.hidden = false;
+    document.body.classList.add("xuanxin-lightbox-open");
+    lightbox.querySelector(".xuanxin-fullpage-lightbox-close").focus();
+  }
+
+  function closeFullpageLightbox() {
+    if (!fullpageLightbox || fullpageLightbox.hidden) return;
+    fullpageLightbox.hidden = true;
+    document.body.classList.remove("xuanxin-lightbox-open");
+  }
+
+  function findFullpageWrapperForPage(pageNumber) {
+    if (paginated && pages.length) {
+      var pageEl = pages[pageNumber - 1];
+      return pageEl ? pageEl.querySelector(".fullpage-image") : null;
+    }
+    return document.querySelector(".fullpage-image");
+  }
+
+  function ensureFullpageToolbar() {
+    if (fullpageToolbar) return fullpageToolbar;
+
+    fullpageToolbar = document.createElement("div");
+    fullpageToolbar.className = "xuanxin-fullpage-controls";
+    fullpageToolbar.setAttribute("aria-label", "Image controls");
+    fullpageToolbar.hidden = true;
+    fullpageToolbar.innerHTML =
+      '<button type="button" class="xuanxin-fullpage-btn" data-action="rotate-left" aria-label="Rotate left" title="Rotate left">↺</button>' +
+      '<button type="button" class="xuanxin-fullpage-btn" data-action="rotate-right" aria-label="Rotate right" title="Rotate right">↻</button>' +
+      '<button type="button" class="xuanxin-fullpage-btn" data-action="popup" aria-label="View larger" title="View larger">' +
+      FULLPAGE_EXPAND_ICON +
+      "</button>";
+    document.body.appendChild(fullpageToolbar);
+
+    fullpageToolbar.addEventListener("click", function (event) {
+      var btn = event.target.closest("[data-action]");
+      if (!btn || !activeFullpageWrapper) return;
+      event.preventDefault();
+      event.stopPropagation();
+
+      var img = activeFullpageWrapper.querySelector("img");
+      if (!img) return;
+
+      var action = btn.dataset.action;
+      if (action === "rotate-left") {
+        var leftDeg = parseInt(img.dataset.rotateDeg || "0", 10);
+        img.dataset.rotateDeg = String((leftDeg + 270) % 360);
+        applyFullpageTransform(img, activeFullpageWrapper);
+      } else if (action === "rotate-right") {
+        var rightDeg = parseInt(img.dataset.rotateDeg || "0", 10);
+        img.dataset.rotateDeg = String((rightDeg + 90) % 360);
+        applyFullpageTransform(img, activeFullpageWrapper);
+      } else if (action === "popup") {
+        openFullpageLightbox(img);
+      }
+    });
+
+    return fullpageToolbar;
+  }
+
+  function updateFullpageToolbar(pageNumber) {
+    initFullpageImages();
+    closeFullpageLightbox();
+    var toolbar = ensureFullpageToolbar();
+    var wrapper = findFullpageWrapperForPage(pageNumber);
+    activeFullpageWrapper = wrapper;
+
+    if (!wrapper) {
+      toolbar.hidden = true;
+      closeFullpageLightbox();
+      document.body.classList.remove("xuanxin-fullpage-active");
+      return;
+    }
+
+    wrapper.appendChild(toolbar);
+    toolbar.hidden = false;
+    document.body.classList.add("xuanxin-fullpage-active");
+    var img = wrapper.querySelector("img");
+    if (!img) return;
+    if (document.body.classList.contains("xuanxin-paginated")) {
+      layoutPaginatedFullpage(img, wrapper);
+    } else {
+      applyFullpageTransform(img, wrapper);
+    }
+  }
+
+  initFullpageImages();
 
   function pageForElement(el) {
     if (!el) return 1;
@@ -163,6 +359,7 @@
     updateHeader(pageNumber);
     syncButtons();
     updateUrl(pageNumber, hash || window.location.hash.slice(1));
+    updateFullpageToolbar(pageNumber);
     if (reader) {
       reader.scrollIntoView({ block: "start", behavior: "smooth" });
     }
@@ -257,6 +454,8 @@
     });
 
     showPage(current, window.location.hash.slice(1));
+  } else {
+    updateFullpageToolbar(1);
   }
 
   if (window.location.hash) {
