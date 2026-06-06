@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from xuanxin.includes import find_peanut_config
 from xuanxin.processor import MarkdownProcessor
 from xuanxin.renderer import BlogRenderer
 
@@ -97,6 +98,7 @@ def render_file(
     theme: str = "default",
     custom_css: Path | None = None,
     mathjax: bool = True,
+    include_config: Path | str | None = None,
     processor: MarkdownProcessor | None = None,
 ) -> Path:
     """Render one Markdown file to {stem}.html in the current directory."""
@@ -108,7 +110,8 @@ def render_file(
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / f"{md_path.stem}.html"
 
-    proc = processor or MarkdownProcessor()
+    cfg = include_config or find_peanut_config(md_path.parent)
+    proc = processor or MarkdownProcessor(include_config=cfg)
     result = proc.process_file(md_path)
     if not result:
         raise RuntimeError(f"Failed to process {md_path}")

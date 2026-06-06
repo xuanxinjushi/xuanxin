@@ -17,15 +17,20 @@
   </script>
   <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
   {% endif %}
+  {% if paginated %}
+  <script src="{{ assets_prefix }}assets/page-reader.js" defer></script>
+  {% endif %}
 </head>
-<body>
-  {% if site_title or not standalone %}
+<body{% if paginated %} class="xuanxin-paginated"{% endif %}{% if book_mode and prev_href %} data-prev-chapter="{{ prev_href }}" data-prev-chapter-pages="{{ prev_chapter_pages }}"{% endif %}{% if book_mode and next_href %} data-next-chapter="{{ next_href }}"{% endif %}>
+  {% if site_title or not standalone or book_mode %}
   <header class="site-header">
     <div class="container">
       {% if site_title %}
-      <a class="site-brand" href="{{ assets_prefix }}{% if standalone %}#{% else %}index.html{% endif %}">{{ site_title }}</a>
+      <a class="site-brand" href="{{ assets_prefix }}{% if book_mode %}index.html{% elif standalone %}#{% else %}index.html{% endif %}">{{ site_title }}</a>
+      {% elif book_mode %}
+      <a class="site-brand" href="index.html">Contents</a>
       {% endif %}
-      {% if not standalone %}<nav class="site-nav">
+      {% if not standalone and not book_mode %}<nav class="site-nav">
         <a href="{{ assets_prefix }}index.html">All posts</a>
       </nav>{% endif %}
     </div>
@@ -33,13 +38,31 @@
   {% endif %}
 
   <main class="container">
-    <article class="post">
+    {% if book_mode %}
+    <nav class="chapter-nav chapter-nav-top" aria-label="Chapter navigation">
+      {% if prev_href %}
+      <a class="chapter-nav-prev" href="{{ prev_href }}">← {{ prev_title }}</a>
+      {% else %}
+      <span class="chapter-nav-spacer"></span>
+      {% endif %}
+      <a class="chapter-nav-index" href="index.html">Contents</a>
+      {% if next_href %}
+      <a class="chapter-nav-next" href="{{ next_href }}">{{ next_title }} →</a>
+      {% else %}
+      <span class="chapter-nav-spacer"></span>
+      {% endif %}
+    </nav>
+    {% endif %}
+
+    <article class="post{% if paginated %} post-paginated{% endif %}">
       <header class="post-header">
         <h1 class="post-title">{{ title }}</h1>
+        {% if not book_mode %}
         <div class="post-meta">
           {% if date %}<time datetime="{{ date.isoformat() }}">{{ date.strftime('%B %d, %Y') }}</time>{% endif %}
           {% if author %}<span class="post-author">{{ author }}</span>{% endif %}
         </div>
+        {% endif %}
         {% if tags %}
         <div class="post-tags">
           {% for tag in tags %}<span class="tag">{{ tag }}</span>{% endfor %}
@@ -55,10 +78,42 @@
         {% endif %}
       </header>
 
-      <div class="prose">
+      {% if paginated %}
+      <nav class="page-nav" aria-label="Page navigation">
+        <button type="button" class="page-nav-btn page-nav-prev" data-page-action="prev" aria-label="Previous page">←</button>
+        <span class="page-nav-indicator"><span data-page-current>1</span> / <span data-page-total>{{ page_count }}</span></span>
+        <button type="button" class="page-nav-btn page-nav-next" data-page-action="next" aria-label="Next page">→</button>
+      </nav>
+      {% endif %}
+
+      <div class="prose{% if paginated %} prose-paginated{% endif %}">
         {{ content | safe }}
       </div>
+
+      {% if paginated %}
+      <nav class="page-nav page-nav-bottom" aria-label="Page navigation">
+        <button type="button" class="page-nav-btn page-nav-prev" data-page-action="prev" aria-label="Previous page">← Previous page</button>
+        <span class="page-nav-indicator"><span data-page-current>1</span> / <span data-page-total>{{ page_count }}</span></span>
+        <button type="button" class="page-nav-btn page-nav-next" data-page-action="next" aria-label="Next page">Next page →</button>
+      </nav>
+      {% endif %}
     </article>
+
+    {% if book_mode %}
+    <nav class="chapter-nav chapter-nav-bottom" aria-label="Chapter navigation">
+      {% if prev_href %}
+      <a class="chapter-nav-prev" href="{{ prev_href }}">← {{ prev_title }}</a>
+      {% else %}
+      <span class="chapter-nav-spacer"></span>
+      {% endif %}
+      <a class="chapter-nav-index" href="index.html">Contents</a>
+      {% if next_href %}
+      <a class="chapter-nav-next" href="{{ next_href }}">{{ next_title }} →</a>
+      {% else %}
+      <span class="chapter-nav-spacer"></span>
+      {% endif %}
+    </nav>
+    {% endif %}
   </main>
 
   <footer class="site-footer">

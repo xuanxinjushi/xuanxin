@@ -172,3 +172,390 @@ def test_render_chapter_without_blog_title(tmp_path):
     assert "<title>Chapter 1: 山</title>" in html
     assert "Blog" not in html
     assert "site-header" not in html
+
+
+def test_footnotes_before_chapter_poster():
+    from xuanxin.footnotes import reorder_footnotes_before_chapter_poster
+
+    wrong = (
+        '<p>Body.</p>'
+        '<div class="xuanxin-pagebreak"></div>'
+        '<p><div class="fullpage-image"><img src="img/p.jpg" class="fullpage" /></div></p>'
+        '<div class="footnote"><hr /><ol><li id="fn:1"><p>Note.</p></li></ol></div>'
+    )
+    fixed = reorder_footnotes_before_chapter_poster(wrong)
+    assert fixed.index("footnote") < fixed.index("p.jpg")
+
+    chapter = Path(__file__).resolve().parents[2] / "chapter1-shan" / "chapter1_zh.md"
+    if chapter.is_file():
+        result = MarkdownProcessor().process_file(chapter)
+        content = result["content"]
+        assert "footnote" in content
+        assert "p.jpg" in content
+        assert content.index("footnote") < content.index("p.jpg")
+
+
+def test_note_sections():
+    sample = """# Reviews
+
+>NOTES: __特蕾西（硅谷初创公司联合创始人）__
+
+不可思议的旅程！非常富有哲理。
+
+>NOTEE
+
+>IMPORS: Key point here.
+
+>IMPORE
+
+>WARNS: Watch out for this.
+
+>WARNE
+"""
+    content = process_string(sample)["content"]
+    assert "NOTES:" not in content
+    assert "NOTEE" not in content
+    assert 'class="xuanxin-notesection"' in content
+    assert 'class="xuanxin-importantsection"' in content
+    assert 'class="xuanxin-warnsection"' in content
+    assert "特蕾西" in content
+    assert "不可思议的旅程" in content
+    assert "Key point here" in content
+    assert "Watch out for this" in content
+
+    review = Path(__file__).resolve().parents[2] / "chapterx" / "review_zh.md"
+    if review.is_file():
+        review_html = MarkdownProcessor().process_file(review)["content"]
+        assert "NOTES:" not in review_html
+        assert "NOTEE" not in review_html
+        assert review_html.count('class="xuanxin-notesection"') >= 6
+        assert "特蕾西" in review_html
+
+
+def test_conditional_include_if_true(tmp_path):
+    snippet = tmp_path / "snippet.md"
+    snippet.write_text("Included paragraph.\n", encoding="utf-8")
+    md = tmp_path / "chapter.md"
+    md.write_text(
+        "Before.\n\n<!-- include: snippet.md if true -->\n\nAfter.\n",
+        encoding="utf-8",
+    )
+    result = MarkdownProcessor().process_file(md)
+    assert "Included paragraph." in result["raw_content"]
+    assert "include:" not in result["raw_content"]
+    assert "Included paragraph." in result["content"]
+
+
+def test_conditional_include_if_false(tmp_path):
+    snippet = tmp_path / "snippet.md"
+    snippet.write_text("Hidden.\n", encoding="utf-8")
+    md = tmp_path / "chapter.md"
+    md.write_text("<!-- include: snippet.md if enable_chapter_end_poster -->\n", encoding="utf-8")
+    (tmp_path / "peanut.config").write_text(
+        '{"enable_chapter_end_poster": false}', encoding="utf-8"
+    )
+    result = MarkdownProcessor(include_config=tmp_path / "peanut.config").process_file(md)
+    assert "Hidden." not in result["raw_content"]
+    assert "include:" not in result["raw_content"]
+
+
+def test_conditional_include_from_peanut_config(tmp_path):
+    snippets = tmp_path / "snippets"
+    snippets.mkdir()
+    (snippets / "poster.md").write_text(
+        "\\newpage\n\n![](img/p.jpg){.fullpage}\n", encoding="utf-8"
+    )
+    chapter_dir = tmp_path / "chapter1-shan"
+    chapter_dir.mkdir()
+    (chapter_dir / "chapter1_zh.md").write_text(
+        "# Chapter 1\n\nEnd.\n\n"
+        "<!-- include: ../snippets/poster.md if enable_chapter_end_poster -->\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "peanut.config").write_text(
+        '{"enable_chapter_end_poster": true}', encoding="utf-8"
+    )
+    result = MarkdownProcessor(include_config=tmp_path / "peanut.config").process_file(
+        chapter_dir / "chapter1_zh.md"
+    )
+    assert "include:" not in result["raw_content"]
+    assert "img/p.jpg" in result["raw_content"]
+    assert "fullpage" in result["content"] or "fullpage-image" in result["content"]
+
+
+def test_multiple_backgrounds_do_not_overlap():
+    md = """---
+title: Preface
+---
+
+# 前言
+
+Intro.
+
+![](img/ren.jpg){.background alpha=0.03 width=40%}
+
+Middle text.
+
+我对“美”的最早记忆，
+
+是雪。
+
+![](img/mei.jpg){.background alpha=0.03 height=40%}
+"""
+    html = process_string(md)["content"]
+    assert "position: fixed" not in html
+    assert "image-background-stack" in html
+    assert html.count("image-background-stack-item") == 2
+    assert 'data-bg-count="2"' in html
+    assert html.index("ren.jpg") < html.index("mei.jpg")
+    assert html.index("Middle text.") < html.index("mei.jpg")
+
+
+def test_preface_two_backgrounds_balanced():
+    preface = Path(__file__).resolve().parents[2] / "chapterx" / "preface_zh.md"
+    if not preface.is_file():
+        import pytest
+
+        pytest.skip("preface_zh.md not found")
+    html = process_string(preface.read_text(encoding="utf-8"))["content"]
+    stack_start = html.index('class="image-background-stack"')
+    stack_end = html.index("</div></div>", stack_start) + len("</div></div>")
+    stack = html[stack_start:stack_end]
+    items = stack.split("image-background-stack-item")
+    assert len(items) == 3  # leading + 2 items
+    assert "那是断奶" in items[1]
+    assert "我对“美”" in items[2]
+    assert "那是断奶" not in items[2]
+
+
+def test_three_backgrounds_equal_stack():
+    md = """---
+title: Test
+---
+
+# Section
+
+A.
+
+![](img/a.jpg){.background alpha=0.03}
+
+Text A.
+
+![](img/b.jpg){.background alpha=0.03}
+
+Text B.
+
+![](img/c.jpg){.background alpha=0.03}
+"""
+    html = process_string(md)["content"]
+    assert 'data-bg-count="3"' in html
+    assert 'class="image-background-stack"' in html
+    assert html.count("image-background-stack-item") == 3
+    assert html.index("a.jpg") < html.index("b.jpg") < html.index("c.jpg")
+
+
+def test_background_sections_respect_pagebreak_and_h1():
+    from xuanxin.paginate import PAGE_BREAK_RE, paginate_content
+
+    md = """---
+title: Test Preface
+---
+
+## Section
+
+Intro.
+
+![](img/x2.jpg){.background .bottom-right alpha=0.03 width=20%}
+
+\\newpage
+
+![](img/me.jpg){.fullpage width=30%}
+
+\\newpage
+
+# 前言
+
+Para one.
+
+![](img/ren.jpg){.background alpha=0.03 width=40%}
+
+Para two.
+"""
+    html = process_string(md)["content"]
+    parts = PAGE_BREAK_RE.split(html)
+    assert len(parts) == 3
+    assert "Para one." in parts[2]
+    assert "ren.jpg" in parts[2]
+    assert "Para two." in parts[2]
+    assert not parts[2].lstrip().startswith("</div>")
+    for part in parts:
+        assert part.count("<div") == part.count("</div>"), part[:80]
+
+    paginated, page_count = paginate_content(html)
+    assert page_count == 3
+    assert 'data-page="3"' in paginated
+    assert paginated.count("前言") >= 1
+    page3 = paginated.split('data-page="3"')[1]
+    assert "Para one." in page3
+    assert "Para two." in page3
+    assert "ren.jpg" in page3
+
+
+def test_paginate_content():
+    from xuanxin.paginate import count_pages, paginate_content
+
+    html = "<p>One</p><div class=\"xuanxin-pagebreak\"></div><p>Two</p>"
+    assert count_pages(html) == 2
+    paginated, n = paginate_content(html)
+    assert n == 2
+    assert "xuanxin-paginated-reader" in paginated
+    assert 'data-page="1"' in paginated
+    assert 'data-page="2"' in paginated
+    assert paginated.count("xuanxin-page") == 2
+
+
+def test_render_paginated_chapter(tmp_path):
+    md = tmp_path / "preface.md"
+    md.write_text(
+        "![](img/cover.jpg){.fullpage}\n\n\\newpage\n\n# Title\n\nPage two.\n",
+        encoding="utf-8",
+    )
+    out = render_file(md, output_dir=tmp_path)
+    html = out.read_text(encoding="utf-8")
+    assert "xuanxin-paginated-reader" in html
+    assert "page-reader.js" in html
+    assert "page-nav" in html
+    assert r"\newpage" not in html
+
+
+def test_latex_fenced_block_stripped():
+    md = """# Title
+
+Visible text.
+
+```{=latex}
+% END_OF_PREFACE
+```
+
+Still here.
+
+```{=latex}
+\\thispagestyle{empty}
+\\begin{center}
+Signature
+\\end{center}
+```
+
+The end.
+"""
+    html = process_string(md)["content"]
+    assert "END_OF_PREFACE" not in html
+    assert "thispagestyle" not in html
+    assert "<pre>" not in html
+    assert "Visible text." in html
+    assert "Still here." in html
+    assert "The end." in html
+
+
+def test_latex_pagebreak():
+    md = """# Title
+
+Before.
+
+\\newpage
+
+After.
+
+\\clearpage
+
+End.
+"""
+    html = process_string(md)["content"]
+    assert r"\newpage" not in html
+    assert r"\clearpage" not in html
+    assert "xuanxin-pagebreak" in html
+    assert html.count("xuanxin-pagebreak") == 2
+    assert "Before." in html
+    assert "After." in html
+    assert "End." in html
+
+
+def test_title_from_first_h1_after_leading_content():
+    md = """![](img/cover.jpg){.fullpage}
+
+# 云层之上 (Above The Clouds)
+
+Body.
+"""
+    result = process_string(md)
+    assert result["metadata"]["title"] == "云层之上 (Above The Clouds)"
+    assert "<h1" not in result["content"]
+    assert "Body." in result["content"]
+
+
+def test_collect_book_markdown():
+    from xuanxin.book import collect_book_markdown, discover_book_repo_root, is_book_repo_root
+
+    cur = Path(__file__).resolve().parent
+    root = None
+    while cur != cur.parent:
+        if is_book_repo_root(cur):
+            root = cur
+            break
+        cur = cur.parent
+    if root is None:
+        import pytest
+
+        pytest.skip("book repo not found")
+
+    files = collect_book_markdown(root, lang="zh")
+    assert len(files) >= 2
+    assert files[0].name == "preface_zh.md"
+    assert files[-1].name == "chapterx_zh.md"
+    assert any(f.parent.name == "chapter1-shan" for f in files)
+
+
+def test_render_book(tmp_path):
+    from xuanxin.book import render_book
+
+    root = tmp_path / "book"
+    (root / "chapterx").mkdir(parents=True)
+    (root / "chapter1-shan").mkdir()
+    (root / "chapter2-lu").mkdir()
+    (root / "chapterx" / "preface_zh.md").write_text(
+        "# Preface\n\nPreface text.\n", encoding="utf-8"
+    )
+    (root / "chapter1-shan" / "chapter1_zh.md").write_text(
+        "# Chapter 1\n\n![](img/a.jpg)\n", encoding="utf-8"
+    )
+    (root / "chapter2-lu" / "chapter2_zh.md").write_text(
+        "# Chapter 2\n\nSecond chapter.\n", encoding="utf-8"
+    )
+    (root / "chapterx" / "chapterx_zh.md").write_text(
+        "# Appendix\n\nEnd matter.\n", encoding="utf-8"
+    )
+
+    out = tmp_path / "book_html"
+    result = render_book(root, output_dir=out, lang="zh", site_title="Test Book")
+    assert result["count"] == 4
+    assert (out / "index.html").exists()
+    assert (out / "preface_zh.html").exists()
+    assert (out / "chapter01.html").exists()
+    assert (out / "chapter02.html").exists()
+    assert (out / "chapterx_zh.html").exists()
+
+    ch1 = (out / "chapter01.html").read_text(encoding="utf-8")
+    assert 'src="../chapter1-shan/img/a.jpg"' in ch1
+    assert "chapter-nav" in ch1
+    assert 'href="preface_zh.html"' in ch1
+    assert 'href="chapter02.html"' in ch1
+    assert 'href="index.html"' in ch1
+
+    ch2 = (out / "chapter02.html").read_text(encoding="utf-8")
+    assert 'href="chapter01.html"' in ch2
+    assert 'href="chapterx_zh.html"' in ch2
+
+    index = (out / "index.html").read_text(encoding="utf-8")
+    assert "Test Book" in index
+    assert "Preface" in index
+    assert "Chapter 2" in index

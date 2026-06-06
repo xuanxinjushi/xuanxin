@@ -14,10 +14,15 @@ from xuanxin.extensions import (
     BackslashBlankLineExtension,
     ImageAttributesExtension,
     ImageClassesExtension,
+    LatexFencedBlockExtension,
+    LatexPageBreakExtension,
     TpImageExtension,
     VideoEmbedExtension,
 )
+from xuanxin.footnotes import reorder_footnotes_before_chapter_poster
+from xuanxin.includes import find_peanut_config, load_config, process_includes
 from xuanxin.latex import protect_latex, restore_latex
+from xuanxin.note_sections import process_note_sections
 
 # First markdown H1, optional Pandoc attrs e.g. `# Chapter 1: 山 {-}`
 _FIRST_H1_LINE_RE = re.compile(r"^#\s+(.+?)(?:\s+\{[^}]*\})?\s*$")
@@ -29,7 +34,8 @@ def _extract_first_h1_title(content: str) -> str | None:
         if not stripped:
             continue
         match = _FIRST_H1_LINE_RE.match(stripped)
-        return match.group(1).strip() if match else None
+        if match:
+            return match.group(1).strip()
     return None
 
 
@@ -54,6 +60,8 @@ def _default_extensions() -> list[Any]:
         "markdown.extensions.fenced_code",
         "markdown.extensions.attr_list",
         "markdown.extensions.nl2br",
+        LatexFencedBlockExtension(),
+        LatexPageBreakExtension(),
         TpImageExtension(),
         BackslashBlankLineExtension(),
         ImageClassesExtension(),
@@ -65,7 +73,15 @@ def _default_extensions() -> list[Any]:
 class MarkdownProcessor:
     """Parse YAML frontmatter + Markdown body and return structured HTML."""
 
-    def __init__(self, *, codehilite_css_class: str = "highlight"):
+    def __init__(
+        self,
+        *,
+        codehilite_css_class: str = "highlight",
+        include_config: Path | str | None = None,
+    ):
+        self._include_config = (
+            Path(include_config).resolve() if include_config else None
+        )
         self._md = markdown.Markdown(
             extensions=_default_extensions(),
             extension_configs={
@@ -91,6 +107,7 @@ class MarkdownProcessor:
         post = frontmatter.loads(content)
         metadata = dict(post.metadata)
         body = post.content
+        body = self._expand_includes(body, source_file=source_file)
 
         if not metadata.get("title"):
             extracted = _extract_first_h1_title(body)
@@ -100,9 +117,11 @@ class MarkdownProcessor:
 
         parsed = self._parse_metadata(metadata)
 
+        body = process_note_sections(body, self._render_markdown_fragment)
         protected, placeholders = protect_latex(body)
         html = self._md.convert(protected)
         html = restore_latex(html, placeholders)
+        html = reorder_footnotes_before_chapter_poster(html)
         self._md.reset()
 
         return {
@@ -154,6 +173,22 @@ class MarkdownProcessor:
         if isinstance(tags, list):
             return [str(t).strip() for t in tags]
         return []
+
+
+    def _render_markdown_fragment(self, md_text: str) -> str:
+        protected, placeholders = protect_latex(md_text)
+        html = self._md.convert(protected)
+        html = restore_latex(html, placeholders)
+        self._md.reset()
+        return html
+
+    def _expand_includes(self, body: str, *, source_file: str | None) -> str:
+        if not source_file or "<!-- include:" not in body:
+            return body
+        base_dir = Path(source_file).parent
+        config_path = self._include_config or find_peanut_config(base_dir)
+        config = load_config(config_path)
+        return process_includes(body, base_dir, config)
 
 
 def process_file(file_path: Path | str) -> dict[str, Any] | None:

@@ -36,6 +36,61 @@ class ImageClassesExtension(Extension):
         )
 
 
+LATEX_PAGEBREAK_RE = re.compile(
+    r"^\s*\\(?:newpage|clearpage|cleardoublepage)\s*$"
+)
+
+PAGE_BREAK_HTML = '<div class="xuanxin-pagebreak" aria-hidden="true"></div>'
+
+LATEX_FENCE_START_RE = re.compile(r"^```\{=latex\}\s*$")
+FENCE_END_RE = re.compile(r"^```\s*$")
+
+
+class LatexFencedBlockPreprocessor(Preprocessor):
+    """Drop Pandoc ``{=latex}`` fenced blocks (PDF-only; bubble markers like END_OF_PREFACE)."""
+
+    def run(self, lines):
+        out: list[str] = []
+        in_block = False
+        for line in lines:
+            stripped = line.strip()
+            if not in_block:
+                if LATEX_FENCE_START_RE.match(stripped):
+                    in_block = True
+                else:
+                    out.append(line)
+            elif FENCE_END_RE.match(stripped):
+                in_block = False
+        return out
+
+
+class LatexFencedBlockExtension(Extension):
+    def extendMarkdown(self, md):
+        md.preprocessors.register(
+            LatexFencedBlockPreprocessor(md), "latex_fenced", 26
+        )
+
+
+class LatexPageBreakPreprocessor(Preprocessor):
+    """Convert LaTeX page-break lines (``\\newpage``, etc.) to HTML/CSS page breaks."""
+
+    def run(self, lines):
+        out: list[str] = []
+        for line in lines:
+            if LATEX_PAGEBREAK_RE.match(line):
+                out.append(PAGE_BREAK_HTML)
+            else:
+                out.append(line)
+        return out
+
+
+class LatexPageBreakExtension(Extension):
+    def extendMarkdown(self, md):
+        md.preprocessors.register(
+            LatexPageBreakPreprocessor(md), "latex_pagebreak", 27
+        )
+
+
 class BackslashBlankLinePreprocessor(Preprocessor):
     """Convert a lone ``\\`` line to a visible blank line (bubble: ``\\hfill\\break``)."""
 

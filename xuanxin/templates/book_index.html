@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% if site_title %}{{ site_title }}{% else %}Contents{% endif %}</title>
+  {% if site_description %}<meta name="description" content="{{ site_description }}">{% endif %}
+  <link rel="stylesheet" href="{{ assets_prefix }}assets/theme.css">
+  {% if custom_css %}<link rel="stylesheet" href="{{ custom_css }}">{% endif %}
+</head>
+<body>
+  {% if site_title %}
+  <header class="site-header">
+    <div class="container">
+      <a class="site-brand" href="index.html">{{ site_title }}</a>
+    </div>
+  </header>
+  {% endif %}
+
+  <main class="container">
+    <section class="index-hero">
+      <h1>{% if site_title %}{{ site_title }}{% else %}Contents{% endif %}</h1>
+      {% if site_description %}<p class="index-desc">{{ site_description }}</p>{% endif %}
+      <p class="index-count">{{ chapters | length }} chapter{{ 's' if chapters | length != 1 else '' }}</p>
+    </section>
+
+    <nav class="book-toc" aria-label="Table of contents">
+      <ol class="book-toc-list">
+        {% for ch in chapters %}
+        <li class="book-toc-item">
+          <a href="{{ ch.href }}">{{ ch.title }}</a>
+        </li>
+        {% endfor %}
+      </ol>
+    </nav>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Built with <a href="https://github.com/xuanxinjushi/xuanxin">xuanxin</a></p>
+    </div>
+  </footer>
+</body>
+</html>

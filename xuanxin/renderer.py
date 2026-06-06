@@ -9,6 +9,8 @@ from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from xuanxin.paginate import paginate_content
+
 
 PACKAGE_DIR = Path(__file__).resolve().parent
 DEFAULT_TEMPLATE_DIR = PACKAGE_DIR / "templates"
@@ -44,9 +46,21 @@ class BlogRenderer:
     def _assets_prefix(self) -> str:
         return f"{self.base_url}/" if self.base_url else ""
 
-    def render_post(self, post: dict[str, Any]) -> str:
+    def render_post(
+        self,
+        post: dict[str, Any],
+        *,
+        book_mode: bool = False,
+        prev_href: str | None = None,
+        prev_title: str | None = None,
+        next_href: str | None = None,
+        next_title: str | None = None,
+        prev_chapter_pages: int = 0,
+    ) -> str:
         meta = post["metadata"]
         use_math = meta.get("math", self.mathjax)
+        content, page_count = paginate_content(post["content"])
+        paginated = page_count > 1
         template = self.env.get_template("post.html")
         return template.render(
             site_title=self.site_title,
@@ -60,11 +74,35 @@ class BlogRenderer:
             tags=meta["tags"],
             description=meta["description"],
             featured_image_url=meta.get("featured_image_url", ""),
-            content=post["content"],
+            content=content,
             theme=self._resolve_theme(meta),
             custom_css=self._custom_css_href(),
             mathjax=use_math,
             standalone=not self.base_url,
+            book_mode=book_mode,
+            prev_href=prev_href,
+            prev_title=prev_title,
+            next_href=next_href,
+            next_title=next_title,
+            paginated=paginated,
+            page_count=page_count,
+            prev_chapter_pages=prev_chapter_pages,
+        )
+
+    def render_book_index(
+        self,
+        chapters: list[dict[str, Any]],
+        *,
+        site_title: str | None = None,
+    ) -> str:
+        template = self.env.get_template("book_index.html")
+        return template.render(
+            site_title=site_title if site_title is not None else self.site_title,
+            site_description=self.site_description,
+            assets_prefix=self._assets_prefix(),
+            chapters=chapters,
+            theme=self.theme,
+            custom_css=self._custom_css_href(),
         )
 
     def render_index(self, posts: list[dict[str, Any]]) -> str:
@@ -131,3 +169,7 @@ class BlogRenderer:
 
         if custom_css and custom_css.exists():
             shutil.copy2(custom_css, assets / "custom.css")
+
+        page_reader_js = PACKAGE_DIR / "static" / "page-reader.js"
+        if page_reader_js.exists():
+            shutil.copy2(page_reader_js, assets / "page-reader.js")

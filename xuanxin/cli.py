@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from xuanxin import __version__
+from xuanxin.book import discover_book_repo_root, render_book
 from xuanxin.builder import BlogBuilder, render_file
 from xuanxin.processor import MarkdownProcessor
 
@@ -39,10 +40,36 @@ def cmd_build(args: argparse.Namespace) -> int:
 
 
 def cmd_render(args: argparse.Namespace) -> int:
-    """Render one .md file to {stem}.html in the current directory."""
+    """Render one .md file, or the full book with --book."""
     custom_css = Path(args.css) if args.css else None
     if custom_css and not custom_css.exists():
         print(f"Warning: custom CSS not found: {custom_css}", file=sys.stderr)
+
+    include_config = Path(args.config) if args.config else None
+    if include_config and not include_config.exists():
+        print(f"Warning: config not found: {include_config}", file=sys.stderr)
+
+    if args.book:
+        root = Path(args.root) if args.root else discover_book_repo_root()
+        out_dir = Path(args.output) if args.output else root / "book_html"
+        result = render_book(
+            root,
+            output_dir=out_dir,
+            lang=args.lang,
+            site_title=args.title,
+            theme=args.theme,
+            custom_css=custom_css,
+            mathjax=not args.no_mathjax,
+            include_config=include_config,
+        )
+        print(f"Built {result['count']} chapter(s) → {result['output_dir']}")
+        for path in result["built"]:
+            print(f"  ✓ {path}")
+        return 0
+
+    if not args.file:
+        print("error: provide a markdown file or use --book", file=sys.stderr)
+        return 1
 
     out_dir = Path(args.output) if args.output else Path.cwd()
     out_file = render_file(
@@ -52,6 +79,7 @@ def cmd_render(args: argparse.Namespace) -> int:
         theme=args.theme,
         custom_css=custom_css,
         mathjax=not args.no_mathjax,
+        include_config=include_config,
     )
     print(f"✓ {out_file}")
     return 0
@@ -103,11 +131,46 @@ def main(argv: list[str] | None = None) -> int:
 
     render = sub.add_parser(
         "render",
-        help="Render one .md file to {filename}.html in the current directory",
+        help="Render one .md file, or the full book with --book",
     )
-    render.add_argument("file", help="Markdown file path")
-    render.add_argument("-o", "--output", default="", help="Output directory (default: current directory)")
-    render.add_argument("-t", "--title", default="", help="Site title (optional; shown in header and page title suffix)")
+    render.add_argument(
+        "file",
+        nargs="?",
+        default="",
+        help="Markdown file path (omit with --book)",
+    )
+    render.add_argument(
+        "--book",
+        action="store_true",
+        help="Render full book to book_html/ (preface, chapters 1–12, appendix)",
+    )
+    render.add_argument(
+        "--lang",
+        default="zh",
+        help="Book language suffix: en, zh, tc, jp, sp (default: zh)",
+    )
+    render.add_argument(
+        "--root",
+        default="",
+        help="Book repository root (default: auto-detect from cwd)",
+    )
+    render.add_argument(
+        "-o",
+        "--output",
+        default="",
+        help="Output directory (default: cwd for single file, book_html/ for --book)",
+    )
+    render.add_argument(
+        "-t",
+        "--title",
+        default="",
+        help="Site title (optional; shown in header and page title suffix)",
+    )
+    render.add_argument(
+        "--config",
+        default="",
+        help="Path to peanut.config for conditional includes (default: auto-detect)",
+    )
     render.add_argument("--theme", default="default", help="Built-in theme (default, dark, minimal)")
     render.add_argument("--css", default="", help="Path to custom CSS file")
     render.add_argument("--no-mathjax", action="store_true", help="Disable MathJax for LaTeX")
