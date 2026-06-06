@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} — {{ site_title }}</title>
+  {% if description %}<meta name="description" content="{{ description }}">{% endif %}
+  <link rel="stylesheet" href="{{ assets_prefix }}assets/theme.css">
+  {% if theme and theme != site_theme %}<link rel="stylesheet" href="{{ assets_prefix }}assets/themes/{{ theme }}.css">{% endif %}
+  {% if custom_css %}<link rel="stylesheet" href="{{ custom_css }}">{% endif %}
+  {% if mathjax %}
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+      options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+    };
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  {% endif %}
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a class="site-brand" href="{{ assets_prefix }}{% if standalone %}#{% else %}index.html{% endif %}">{{ site_title }}</a>
+      {% if not standalone %}<nav class="site-nav">
+        <a href="{{ assets_prefix }}index.html">All posts</a>
+      </nav>{% endif %}
+    </div>
+  </header>
+
+  <main class="container">
+    <article class="post">
+      <header class="post-header">
+        <h1 class="post-title">{{ title }}</h1>
+        <div class="post-meta">
+          {% if date %}<time datetime="{{ date.isoformat() }}">{{ date.strftime('%B %d, %Y') }}</time>{% endif %}
+          {% if author %}<span class="post-author">{{ author }}</span>{% endif %}
+        </div>
+        {% if tags %}
+        <div class="post-tags">
+          {% for tag in tags %}<span class="tag">{{ tag }}</span>{% endfor %}
+        </div>
+        {% endif %}
+        {% if description %}
+        <p class="post-lead">{{ description }}</p>
+        {% endif %}
+        {% if featured_image_url %}
+        <figure class="post-featured">
+          <img src="{{ featured_image_url }}" alt="{{ title }}">
+        </figure>
+        {% endif %}
+      </header>
+
+      <div class="prose">
+        {{ content | safe }}
+      </div>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Built with <a href="https://github.com/xuanxin/xuanxin">xuanxin</a></p>
+    </div>
+  </footer>
+</body>
+</html>

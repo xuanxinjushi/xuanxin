@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xuanxin"
+version = "0.1.0"
+description = "Markdown blog to beautiful static HTML — write .md, customize CSS, publish."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+authors = [{ name = "xuanxin" }]
+keywords = ["markdown", "blog", "static-site", "html"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+]
+dependencies = [
+    "markdown>=3.5",
+    "python-frontmatter>=1.1",
+    "jinja2>=3.1",
+    "pygments>=2.17",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+xuanxin = "xuanxin.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["xuanxin*"]
+
+[tool.setuptools.package-data]
+xuanxin = ["templates/*", "static/themes/*", "static/themes/_base.css"]

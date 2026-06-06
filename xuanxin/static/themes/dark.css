@@ -1,0 +1,23 @@
+/* xuanxin dark theme variables */
+
+:root {
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  --font-serif: "Merriweather", "Georgia", "Times New Roman", serif;
+
+  --color-bg: #0f172a;
+  --color-surface: #1e293b;
+  --color-text: #f1f5f9;
+  --color-text-muted: #94a3b8;
+  --color-primary: #818cf8;
+  --color-primary-hover: #a5b4fc;
+  --color-border: #334155;
+  --color-code-bg: #0f172a;
+  --color-blockquote-bg: #1a2332;
+  --color-shadow: rgba(0, 0, 0, 0.3);
+  --color-shadow-hover: rgba(0, 0, 0, 0.5);
+
+  --max-width: 720px;
+  --radius: 10px;
+  --radius-sm: 6px;
+}

@@ -1,0 +1,23 @@
+/* Example custom CSS — override theme variables or add rules */
+
+:root {
+  --color-primary: #059669;
+  --color-primary-hover: #047857;
+  --font-serif: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+}
+
+.prose h2 {
+  color: var(--color-primary);
+}
+
+.post-title {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.site-header {
+  border-bottom-width: 3px;
+  border-bottom-color: var(--color-primary);
+}
