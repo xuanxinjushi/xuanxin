@@ -519,6 +519,17 @@ body.xuanxin-paginated .prose .fullpage-image {
   height: auto;
   border-radius: var(--radius);
   margin: 1.25rem 0;
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.prose .tp-image-section img,
+.prose .fullpage-image img,
+.post-featured img {
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 /* Chapter opening artwork from **tp_image** — flat, bottom-right in opening block */
@@ -662,10 +673,21 @@ body.xuanxin-paginated .xuanxin-page .image-background-stack {
   align-items: center;
   justify-content: center;
   margin: 2rem 0;
+  overflow: visible;
 }
 
 .prose .fullpage-image img {
   margin: 0;
+  cursor: pointer;
+  transition: transform 0.35s ease;
+  transform-origin: center center;
+}
+
+.prose .fullpage-image.is-rotated-side img {
+  max-width: min(75vh, 100%) !important;
+  max-height: 100vw !important;
+  width: auto !important;
+  height: auto !important;
 }
 
 .prose img:hover {

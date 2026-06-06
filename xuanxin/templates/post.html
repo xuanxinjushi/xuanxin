@@ -17,9 +17,7 @@
   </script>
   <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
   {% endif %}
-  {% if paginated or book_mode %}
   <script src="{{ assets_prefix }}assets/page-reader.js" defer></script>
-  {% endif %}
 </head>
 <body{% if paginated %} class="xuanxin-paginated"{% endif %}{% if book_mode and prev_href %} data-prev-chapter="{{ prev_href }}" data-prev-chapter-pages="{{ prev_chapter_pages }}"{% endif %}{% if book_mode and next_href %} data-next-chapter="{{ next_href }}"{% endif %}>
   {% if site_title or not standalone or book_mode %}
