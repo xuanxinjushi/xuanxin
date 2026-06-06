@@ -23,6 +23,23 @@ LANG_SUFFIX = {
 }
 
 
+def normalize_book_lang(lang: str) -> str:
+    """Normalize CLI language codes to canonical suffix keys."""
+    key = lang.lower().strip().replace("-", "_")
+    if key in ("cn", "zh_cn"):
+        return "zh"
+    return key
+
+
+def default_book_output_dir(root: Path | str, lang: str) -> Path:
+    """Return the default HTML output directory for a book language."""
+    root = Path(root).resolve()
+    lang = normalize_book_lang(lang)
+    if lang == "en":
+        return root / "book_html"
+    return root / f"book_html_{lang}"
+
+
 @dataclass
 class BookChapter:
     """One rendered unit in reading order."""
@@ -60,6 +77,7 @@ def discover_book_repo_root(start: Path | None = None) -> Path:
 def collect_book_markdown(root: Path, lang: str = "en") -> list[Path]:
     """Return markdown files in reading order (preface, ch.1–12, appendix)."""
     root = root.resolve()
+    lang = normalize_book_lang(lang)
     suffix = LANG_SUFFIX.get(lang, lang if lang.startswith("_") else "")
     if lang not in LANG_SUFFIX and not suffix.startswith("_"):
         suffix = f"_{lang}" if lang != "en" else ""
@@ -113,7 +131,7 @@ def rewrite_chapter_img_paths(html: str, md_path: Path, book_root: Path) -> str:
 def render_book(
     root: Path | str,
     *,
-    output_dir: Path | str = "book_html",
+    output_dir: Path | str | None = None,
     lang: str = "en",
     site_title: str = "",
     theme: str = "default",
@@ -124,7 +142,11 @@ def render_book(
 ) -> dict[str, Any]:
     """Render full book into output_dir with index and prev/next navigation."""
     book_root = Path(root).resolve()
-    out_dir = Path(output_dir).resolve()
+    out_dir = (
+        Path(output_dir).resolve()
+        if output_dir is not None
+        else default_book_output_dir(book_root, lang)
+    )
     out_dir.mkdir(parents=True, exist_ok=True)
 
     md_files = collect_book_markdown(book_root, lang)

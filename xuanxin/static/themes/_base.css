@@ -237,7 +237,7 @@ body {
 }
 
 .prose h1 { font-size: 1.8rem; }
-.prose h2 { font-size: 1.5rem; border-bottom: 1px solid var(--color-border); padding-bottom: 0.3rem; scroll-margin-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)); }
+.prose h2 { font-size: 1.5rem; border-bottom: 1px solid var(--color-border); padding-bottom: 0.3rem; scroll-margin-top: 4rem; scroll-margin-bottom: 1rem; }
 .prose h3 { font-size: 1.25rem; }
 
 .prose p { margin: 0 0 var(--prose-line-gap); }
@@ -573,6 +573,10 @@ body.xuanxin-paginated .prose .fullpage-image {
   margin: 1.5rem 0;
 }
 
+.prose .image-background-section.image-background-bottom-right {
+  margin: 0;
+}
+
 .prose .image-background-section > img.background {
   position: absolute;
   z-index: 0;
@@ -741,25 +745,35 @@ body.xuanxin-paginated .xuanxin-page .image-background-stack {
 
 .xuanxin-section-nav--floating {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  left: auto;
   z-index: 250;
   margin: 0;
-  padding: 0.65rem 1rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
-  background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+  padding: 0.45rem 0.55rem;
+  max-width: min(22rem, calc(100vw - 2rem));
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  background: color-mix(in srgb, var(--color-surface) 96%, transparent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border-top: 1px solid var(--color-border);
-  box-shadow: 0 -4px 24px var(--color-shadow);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 20px var(--color-shadow);
+}
+
+.xuanxin-section-nav--floating .xuanxin-section-nav-btn {
+  padding: 0.32rem 0.75rem;
+  font-size: 0.82rem;
 }
 
 body.xuanxin-has-section-nav {
-  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: 0;
 }
 
 body.xuanxin-has-section-nav .site-footer {
-  margin-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+  margin-bottom: 0;
 }
 
 .xuanxin-section-nav-btn {

@@ -117,10 +117,31 @@ After.
     assert "bottom-right" in html
     assert "position: absolute" in html
     assert "position: fixed" not in html
-    assert 'class="image-background-section"' in html
+    assert 'class="image-background-section image-background-bottom-right"' in html
     assert "bottom: 1.0in" in html
     assert '<figure class="image-block">' in html
     assert "<figcaption>A caption</figcaption>" in html
+
+
+def test_bottom_right_background_keeps_adjacent_paragraphs_together():
+    md = """## 泉水
+
+村子不大，
+
+![](img/quan.jpg){.background .bottom-right alpha=0.3 width=40% bottom-offset=1.0in}
+
+十几户人家。
+"""
+    html = process_string(md)["content"]
+    assert "image-background-bottom-right" in html
+    assert html.index("村子不大") < html.index("quan.jpg") < html.index("十几户人家")
+    # Both paragraphs live in the same background wrapper (not split across blocks).
+    section_start = html.index('class="image-background-section image-background-bottom-right"')
+    section_end = html.index("</div>", section_start)
+    section = html[section_start:section_end]
+    assert "村子不大" in section
+    assert "十几户人家" in section
+    assert section.count("<p>") == 2
 
 
 def test_inject_tp_image_class():
@@ -550,6 +571,18 @@ def test_collect_book_markdown():
     assert any(f.parent.name == "chapter1-shan" for f in files)
 
 
+def test_default_book_output_dir():
+    from xuanxin.book import default_book_output_dir
+
+    root = Path("/repo")
+    assert default_book_output_dir(root, "en") == Path("/repo/book_html")
+    assert default_book_output_dir(root, "zh") == Path("/repo/book_html_zh")
+    assert default_book_output_dir(root, "cn") == Path("/repo/book_html_zh")
+    assert default_book_output_dir(root, "tc") == Path("/repo/book_html_tc")
+    assert default_book_output_dir(root, "jp") == Path("/repo/book_html_jp")
+    assert default_book_output_dir(root, "sp") == Path("/repo/book_html_sp")
+
+
 def test_render_book(tmp_path):
     from xuanxin.book import render_book
 
@@ -594,3 +627,9 @@ def test_render_book(tmp_path):
     assert "Test Book" in index
     assert "Preface" in index
     assert "Chapter 2" in index
+
+    default_out = root / "book_html_zh"
+    result_default = render_book(root, lang="zh", site_title="Test Book")
+    assert result_default["output_dir"] == str(default_out.resolve())
+    assert default_out.exists()
+    assert (default_out / "index.html").exists()

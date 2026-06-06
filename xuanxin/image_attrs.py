@@ -407,14 +407,25 @@ def _wrap_background_section(heading: str, body: str) -> str:
     is_full_bleed: list[bool] = []
     pos = 0
     for bg in BG_IMG_IN_P_RE.finditer(body):
-        gaps.append(body[pos : bg.start()])
+        gap_before = body[pos : bg.start()]
         img_tag = bg.group(1)
         pos = bg.end()
         inner_end = _next_wrap_boundary(body, pos)
         inner = body[pos:inner_end]
-        sections.append(f'<div class="image-background-section">{img_tag}{inner}</div>')
-        is_full_bleed.append(not _is_bottom_right_bg(img_tag))
         pos = inner_end
+
+        if _is_bottom_right_bg(img_tag):
+            sections.append(
+                '<div class="image-background-section image-background-bottom-right">'
+                f"{gap_before}{img_tag}{inner}</div>"
+            )
+            is_full_bleed.append(False)
+            gaps.append("")
+        else:
+            gaps.append(gap_before)
+            sections.append(f'<div class="image-background-section">{img_tag}{inner}</div>')
+            is_full_bleed.append(True)
+
     gaps.append(body[pos:])
 
     sections = _stack_wrap_sections(sections, is_full_bleed)

@@ -1,6 +1,6 @@
 """xuanxin — Markdown blog to beautiful static HTML."""
 
-from xuanxin.book import collect_book_markdown, render_book
+from xuanxin.book import collect_book_markdown, default_book_output_dir, render_book
 from xuanxin.builder import BlogBuilder, render_file
 from xuanxin.processor import MarkdownProcessor, process_file, process_string
 
@@ -9,6 +9,7 @@ __all__ = [
     "BlogBuilder",
     "MarkdownProcessor",
     "collect_book_markdown",
+    "default_book_output_dir",
     "process_file",
     "process_string",
     "render_book",

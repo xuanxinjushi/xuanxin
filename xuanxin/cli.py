@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 from xuanxin import __version__
-from xuanxin.book import discover_book_repo_root, render_book
+from xuanxin.book import default_book_output_dir, discover_book_repo_root, render_book
 from xuanxin.builder import BlogBuilder, render_file
 from xuanxin.processor import MarkdownProcessor
 
@@ -51,7 +51,11 @@ def cmd_render(args: argparse.Namespace) -> int:
 
     if args.book:
         root = Path(args.root) if args.root else discover_book_repo_root()
-        out_dir = Path(args.output) if args.output else root / "book_html"
+        out_dir = (
+            Path(args.output)
+            if args.output
+            else default_book_output_dir(root, args.lang)
+        )
         result = render_book(
             root,
             output_dir=out_dir,
@@ -142,7 +146,7 @@ def main(argv: list[str] | None = None) -> int:
     render.add_argument(
         "--book",
         action="store_true",
-        help="Render full book to book_html/ (preface, chapters 1–12, appendix)",
+        help="Render full book (preface, chapters 1–12, appendix) to book_html_{lang}/",
     )
     render.add_argument(
         "--lang",
@@ -158,7 +162,7 @@ def main(argv: list[str] | None = None) -> int:
         "-o",
         "--output",
         default="",
-        help="Output directory (default: cwd for single file, book_html/ for --book)",
+        help="Output directory (default: book_html/ or book_html_{lang}/ for --book)",
     )
     render.add_argument(
         "-t",
