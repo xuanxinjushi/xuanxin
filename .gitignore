@@ -47,3 +47,7 @@ examples/content/assets/
 # Local overrides
 .env
 *.local
+
+# Twine / PyPI credentials
+.pypirc
+.pypi-token
