@@ -848,6 +848,38 @@ def test_diary_converts_large_png_to_jpg(tmp_path):
     assert 'src="19890602/n.png"' not in html
 
 
+def test_diary_normalizes_wrong_asset_folder_and_rewrites_png(tmp_path):
+    import os
+
+    from PIL import Image
+
+    from xuanxin.diary import DiaryBuilder
+
+    input_dir = tmp_path / "diary_md"
+    img_dir = input_dir / "19890602"
+    img_dir.mkdir(parents=True)
+    png_path = img_dir / "n.png"
+    Image.frombytes("RGBA", (900, 900), b"\0" * (900 * 900 * 4)).save(png_path, format="PNG")
+    if png_path.stat().st_size <= 100 * 1024:
+        Image.frombytes("RGBA", (1200, 900), os.urandom(1200 * 900 * 4)).save(png_path, format="PNG")
+
+    (input_dir / "19890602.md").write_text(
+        "# Typo path\n\n"
+        ">GALLERYS\n\n"
+        "![](191890602/n.png)\n\n"
+        ">GALLERYE\n",
+        encoding="utf-8",
+    )
+
+    out = tmp_path / "diary_html"
+    DiaryBuilder(input_dir=input_dir, output_dir=out).build()
+
+    html = (out / "19890602.html").read_text(encoding="utf-8")
+    assert 'src="19890602/n_small.jpg"' in html
+    assert "191890602/n.png" not in html
+    assert (input_dir / "19890602" / "n_small.jpg").exists()
+
+
 def test_diary_removes_stale_index_pages(tmp_path):
     from xuanxin.diary import DiaryBuilder
 

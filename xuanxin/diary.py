@@ -22,7 +22,28 @@ from xuanxin.renderer import BlogRenderer
 
 _DATE_STEM_RE = re.compile(r"^(\d{4})(\d{2})(\d{2})$")
 _INDEX_PAGE_RE = re.compile(r"^index-(\d+)\.html$")
+_DIARY_IMAGE_RE = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
 DEFAULT_INDEX_PAGE_SIZE = 20
+
+
+def normalize_diary_asset_refs(text: str, md_stem: str, input_dir: Path) -> str:
+    """Point image refs at ``{md_stem}/`` when the filename exists in that folder."""
+    asset_dir = input_dir / md_stem
+    if not asset_dir.is_dir():
+        return text
+
+    def repl(match: re.Match[str]) -> str:
+        alt, path = match.group(1), _normalize_asset_ref(match.group(2))
+        filename = Path(path).name
+        if (asset_dir / filename).is_file():
+            return f"![{alt}]({md_stem}/{filename})"
+        return match.group(0)
+
+    return _DIARY_IMAGE_RE.sub(repl, text)
+
+
+def _normalize_asset_ref(path: str) -> str:
+    return path.strip().split()[0]
 
 
 def date_from_stem(stem: str) -> datetime | None:
@@ -102,11 +123,12 @@ class DiaryBuilder:
         copied_assets: list[str] = []
 
         for md_path in md_files:
-            result = self._process_diary_file(md_path)
+            raw_text = md_path.read_text(encoding="utf-8")
+            raw_text = normalize_diary_asset_refs(raw_text, md_path.stem, self.input_dir)
+            result = self._process_diary_file(md_path, raw_text)
             if not result:
                 continue
 
-            raw_text = md_path.read_text(encoding="utf-8")
             asset_paths = collect_asset_paths(raw_text, result["content"])
             path_rewrites: dict[str, str] = {}
             copied, asset_rewrites = copy_assets(
@@ -184,8 +206,8 @@ class DiaryBuilder:
             if match and int(match.group(1)) > total_pages:
                 path.unlink()
 
-    def _process_diary_file(self, md_path: Path) -> dict[str, Any] | None:
-        text = md_path.read_text(encoding="utf-8")
+    def _process_diary_file(self, md_path: Path, text: str | None = None) -> dict[str, Any] | None:
+        text = text if text is not None else md_path.read_text(encoding="utf-8")
         post = frontmatter.loads(text)
         result = self.processor.process_string(text, source_file=str(md_path))
         if not result:
