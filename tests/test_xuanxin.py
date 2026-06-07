@@ -690,6 +690,22 @@ def test_render_book(tmp_path):
     assert (default_out / "index.html").exists()
 
 
+def test_dev_version_uses_git_commit_hash():
+    from xuanxin import __version__
+    from xuanxin._version import git_commit_hash, resolve_version
+
+    assert resolve_version("0.1.1") == "0.1.1"
+    assert resolve_version("1.0.0") == "1.0.0"
+
+    commit = git_commit_hash()
+    if commit is None:
+        import pytest
+
+        pytest.skip("git commit hash unavailable")
+    assert resolve_version("0.1.1.dev0") == commit
+    assert __version__ == commit
+
+
 def test_date_from_stem():
     from datetime import datetime
 
