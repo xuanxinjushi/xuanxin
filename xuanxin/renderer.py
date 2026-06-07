@@ -142,6 +142,12 @@ class BlogRenderer:
         *,
         home_url: str = "",
         gtag_snippet: str = "",
+        page: int = 1,
+        total_pages: int = 1,
+        total_entries: int | None = None,
+        list_start: int = 1,
+        prev_href: str | None = None,
+        next_href: str | None = None,
     ) -> str:
         template = self.env.get_template("diary_index.html")
         return template.render(
@@ -151,6 +157,12 @@ class BlogRenderer:
             custom_css=self._custom_css_href(),
             home_url=home_url,
             gtag_snippet=gtag_snippet,
+            page=page,
+            total_pages=total_pages,
+            total_entries=total_entries if total_entries is not None else len(entries),
+            list_start=list_start,
+            prev_href=prev_href,
+            next_href=next_href,
         )
 
     def render_index(self, posts: list[dict[str, Any]]) -> str:

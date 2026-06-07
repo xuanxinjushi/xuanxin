@@ -114,13 +114,13 @@ def cmd_diary(args: argparse.Namespace) -> int:
         site_title=args.title,
         theme=args.theme,
         mathjax=not args.no_mathjax,
+        index_page_size=args.page_size,
     )
     result = builder.build()
-    print(f"Built {result['count']} entr{'ies' if result['count'] != 1 else 'y'} → {args.output}")
+    pages_note = f", {result['index_pages']} index page(s)" if result["index_pages"] > 1 else ""
+    print(f"Built {result['count']} entr{'ies' if result['count'] != 1 else 'y'}{pages_note} → {args.output}")
     for path in result["built"]:
         print(f"  ✓ {path}")
-    if result["skipped"]:
-        print(f"Skipped {len(result['skipped'])} file(s) (up to date)")
     return 0
 
 
@@ -214,6 +214,12 @@ def main(argv: list[str] | None = None) -> int:
     diary.add_argument("-gtag", default="", help="Path to gtag.js snippet to inject in <head>")
     diary.add_argument("-home", default="", help="Home URL for back links (e.g. wu-99.com)")
     diary.add_argument("-t", "--title", default="Diary", help="Diary index title")
+    diary.add_argument(
+        "--page-size",
+        type=int,
+        default=20,
+        help="Diary entries per index page (default: 20)",
+    )
     diary.add_argument("--theme", default="default", help="Built-in theme name (default, dark, minimal)")
     diary.add_argument("--no-mathjax", action="store_true", help="Disable MathJax for LaTeX")
     diary.set_defaults(func=cmd_diary)

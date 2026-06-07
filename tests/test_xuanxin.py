@@ -700,30 +700,66 @@ def test_build_diary(tmp_path):
     assert "<!-- gtag -->" in entry
 
 
-def test_diary_cache_skips_unchanged(tmp_path):
-    import os
-    import time
+def test_diary_index_pagination(tmp_path):
+    from xuanxin.diary import DiaryBuilder, diary_index_filename
 
+    input_dir = tmp_path / "diary_md"
+    input_dir.mkdir()
+    for day in range(1, 26):
+        (input_dir / f"202601{day:02d}.md").write_text(f"# Day {day}\n\nEntry {day}.\n", encoding="utf-8")
+
+    out = tmp_path / "diary_html"
+    result = DiaryBuilder(
+        input_dir=input_dir,
+        output_dir=out,
+        home_url="wu-99.com",
+        index_page_size=10,
+    ).build()
+
+    assert result["count"] == 25
+    assert result["index_pages"] == 3
+    assert (out / "index.html").exists()
+    assert (out / "index-2.html").exists()
+    assert (out / "index-3.html").exists()
+
+    page1 = (out / "index.html").read_text(encoding="utf-8")
+    assert "page 1 of 3" in page1
+    assert 'href="20260125.html"' in page1
+    assert 'href="index-2.html"' in page1
+    assert "Older →" in page1
+    assert "← Newer" not in page1
+
+    page2 = (out / "index-2.html").read_text(encoding="utf-8")
+    assert 'href="index.html"' in page2
+    assert 'href="index-3.html"' in page2
+    assert "← Newer" in page2
+    assert "Older →" in page2
+
+    page3 = (out / "index-3.html").read_text(encoding="utf-8")
+    assert 'href="20260101.html"' in page3
+    assert 'href="index-2.html"' in page3
+    assert "Older →" not in page3
+
+    assert diary_index_filename(1) == "index.html"
+    assert diary_index_filename(2) == "index-2.html"
+
+
+def test_diary_removes_stale_index_pages(tmp_path):
     from xuanxin.diary import DiaryBuilder
 
     input_dir = tmp_path / "diary_md"
     input_dir.mkdir()
-    md = input_dir / "20260606.md"
-    md.write_text("# Today\n\nFirst build.\n", encoding="utf-8")
-
     out = tmp_path / "diary_html"
-    builder = DiaryBuilder(input_dir=input_dir, output_dir=out, home_url="wu-99.com")
 
-    first = builder.build()
-    assert len(first["built"]) == 2  # index + entry
+    for day in range(1, 26):
+        (input_dir / f"202601{day:02d}.md").write_text(f"# Day {day}\n", encoding="utf-8")
+    DiaryBuilder(input_dir=input_dir, output_dir=out, index_page_size=10).build()
+    assert (out / "index-3.html").exists()
 
-    second = builder.build()
-    assert second["built"] == []
-    assert len(second["skipped"]) == 2
-
-    time.sleep(0.05)
-    os.utime(md, None)
-
-    third = builder.build()
-    assert str(out / "20260606.html") in third["built"]
-    assert str(out / "index.html") in third["built"]
+    for path in input_dir.glob("*.md"):
+        if path.stem not in ("20260101", "20260102"):
+            path.unlink()
+    DiaryBuilder(input_dir=input_dir, output_dir=out, index_page_size=10).build()
+    assert (out / "index.html").exists()
+    assert not (out / "index-2.html").exists()
+    assert not (out / "index-3.html").exists()

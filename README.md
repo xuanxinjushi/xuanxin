@@ -58,6 +58,9 @@ xuanxin preview content/my-post.md
 
 # List built-in themes
 xuanxin themes
+
+# Diary site (dated .md files → flat HTML, paginated index)
+xuanxin diary -i input_folder -o output_folder -gtag gtag.js -home wu-99.com --page-size 20
 ```
 
 ## Customize styles (3 ways)

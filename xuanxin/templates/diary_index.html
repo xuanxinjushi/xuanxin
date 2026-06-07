@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ site_title }}</title>
+  <title>{% if total_pages > 1 %}{{ site_title }} — Page {{ page }}{% else %}{{ site_title }}{% endif %}</title>
   {% if gtag_snippet %}{{ gtag_snippet | safe }}{% endif %}
   <link rel="stylesheet" href="{{ assets_prefix }}assets/theme.css">
   {% if custom_css %}<link rel="stylesheet" href="{{ custom_css }}">{% endif %}
@@ -20,11 +20,27 @@
   <main class="container">
     <section class="index-hero">
       <h1>{{ site_title }}</h1>
-      <p class="index-count">{{ entries | length }} entr{{ 'ies' if entries | length != 1 else 'y' }}</p>
+      <p class="index-count">{{ total_entries }} entr{{ 'ies' if total_entries != 1 else 'y' }}{% if total_pages > 1 %} · page {{ page }} of {{ total_pages }}{% endif %}</p>
     </section>
 
+    {% if total_pages > 1 %}
+    <nav class="chapter-nav chapter-nav-top diary-index-nav" aria-label="Index pagination">
+      {% if prev_href %}
+      <a class="chapter-nav-prev" href="{{ prev_href }}">← Newer</a>
+      {% else %}
+      <span class="chapter-nav-spacer"></span>
+      {% endif %}
+      <span class="page-nav-indicator">{{ page }} / {{ total_pages }}</span>
+      {% if next_href %}
+      <a class="chapter-nav-next" href="{{ next_href }}">Older →</a>
+      {% else %}
+      <span class="chapter-nav-spacer"></span>
+      {% endif %}
+    </nav>
+    {% endif %}
+
     <nav class="book-toc" aria-label="Diary entries">
-      <ol class="book-toc-list">
+      <ol class="book-toc-list"{% if entries %} start="{{ list_start }}"{% endif %}>
         {% for entry in entries %}
         <li class="book-toc-item">
           <a href="{{ entry.href }}">
@@ -37,6 +53,22 @@
         {% endfor %}
       </ol>
     </nav>
+
+    {% if total_pages > 1 %}
+    <nav class="chapter-nav chapter-nav-bottom diary-index-nav" aria-label="Index pagination">
+      {% if prev_href %}
+      <a class="chapter-nav-prev" href="{{ prev_href }}">← Newer</a>
+      {% else %}
+      <span class="chapter-nav-spacer"></span>
+      {% endif %}
+      <span class="page-nav-indicator">{{ page }} / {{ total_pages }}</span>
+      {% if next_href %}
+      <a class="chapter-nav-next" href="{{ next_href }}">Older →</a>
+      {% else %}
+      <span class="chapter-nav-spacer"></span>
+      {% endif %}
+    </nav>
+    {% endif %}
   </main>
 
   <footer class="site-footer">

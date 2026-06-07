@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -14,6 +15,8 @@ from xuanxin.processor import MarkdownProcessor
 from xuanxin.renderer import BlogRenderer
 
 _DATE_STEM_RE = re.compile(r"^(\d{4})(\d{2})(\d{2})$")
+_INDEX_PAGE_RE = re.compile(r"^index-(\d+)\.html$")
+DEFAULT_INDEX_PAGE_SIZE = 20
 
 
 def date_from_stem(stem: str) -> datetime | None:
@@ -38,15 +41,18 @@ def normalize_home_url(url: str) -> str:
     return url
 
 
-def is_stale(output: Path, *sources: Path) -> bool:
-    """Return True when output is missing or older than any source file."""
-    if not output.exists():
-        return True
-    out_mtime = output.stat().st_mtime
-    for src in sources:
-        if src.exists() and src.stat().st_mtime > out_mtime:
-            return True
-    return False
+def diary_index_filename(page: int) -> str:
+    """Return the HTML filename for a diary index page (1-based)."""
+    if page <= 1:
+        return "index.html"
+    return f"index-{page}.html"
+
+
+def index_page_count(entry_count: int, page_size: int) -> int:
+    """Return how many index pages are needed."""
+    if entry_count == 0:
+        return 1
+    return math.ceil(entry_count / page_size)
 
 
 @dataclass
@@ -61,6 +67,7 @@ class DiaryBuilder:
     theme: str = "default"
     custom_css: Path | None = None
     mathjax: bool = True
+    index_page_size: int = DEFAULT_INDEX_PAGE_SIZE
     processor: MarkdownProcessor = field(default_factory=MarkdownProcessor)
 
     def build(self) -> dict[str, Any]:
@@ -86,30 +93,22 @@ class DiaryBuilder:
 
         entries: list[dict[str, Any]] = []
         built: list[str] = []
-        skipped: list[str] = []
-        cache_sources = [p for p in (gtag_path,) if p and p.is_file()]
 
         for md_path in md_files:
             result = self._process_diary_file(md_path)
             if not result:
-                skipped.append(str(md_path))
                 continue
 
             html_name = f"{md_path.stem}.html"
             out_file = self.output_dir / html_name
-            entry_sources = [md_path, *cache_sources]
-
-            if is_stale(out_file, *entry_sources):
-                html = renderer.render_diary_post(
-                    result,
-                    home_url=home_url,
-                    gtag_snippet=gtag_snippet,
-                    index_href="index.html",
-                )
-                out_file.write_text(html, encoding="utf-8")
-                built.append(str(out_file))
-            else:
-                skipped.append(str(out_file))
+            html = renderer.render_diary_post(
+                result,
+                home_url=home_url,
+                gtag_snippet=gtag_snippet,
+                index_href="index.html",
+            )
+            out_file.write_text(html, encoding="utf-8")
+            built.append(str(out_file))
 
             entries.append(
                 {
@@ -122,26 +121,43 @@ class DiaryBuilder:
 
         entries.sort(key=lambda item: item["date"], reverse=True)
 
-        index_path = self.output_dir / "index.html"
-        index_sources = [*md_files, *cache_sources]
-        if is_stale(index_path, *index_sources) or built:
+        page_size = max(1, self.index_page_size)
+        total_pages = index_page_count(len(entries), page_size)
+        for page in range(1, total_pages + 1):
+            start = (page - 1) * page_size
+            page_entries = entries[start : start + page_size]
+            index_name = diary_index_filename(page)
+            index_path = self.output_dir / index_name
+            prev_href = diary_index_filename(page - 1) if page > 1 else None
+            next_href = diary_index_filename(page + 1) if page < total_pages else None
             index_html = renderer.render_diary_index(
-                entries,
+                page_entries,
                 home_url=home_url,
                 gtag_snippet=gtag_snippet,
+                page=page,
+                total_pages=total_pages,
+                total_entries=len(entries),
+                list_start=(page - 1) * page_size + 1,
+                prev_href=prev_href,
+                next_href=next_href,
             )
             index_path.write_text(index_html, encoding="utf-8")
-            if str(index_path) not in built:
-                built.insert(0, str(index_path))
-        else:
-            skipped.append(str(index_path))
+            built.append(str(index_path))
+
+        self._remove_stale_index_pages(total_pages)
 
         return {
             "built": built,
-            "skipped": skipped,
             "count": len(entries),
+            "index_pages": total_pages,
             "output_dir": str(self.output_dir),
         }
+
+    def _remove_stale_index_pages(self, total_pages: int) -> None:
+        for path in self.output_dir.glob("index-*.html"):
+            match = _INDEX_PAGE_RE.match(path.name)
+            if match and int(match.group(1)) > total_pages:
+                path.unlink()
 
     def _process_diary_file(self, md_path: Path) -> dict[str, Any] | None:
         text = md_path.read_text(encoding="utf-8")
