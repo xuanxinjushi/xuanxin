@@ -105,6 +105,54 @@ class BlogRenderer:
             custom_css=self._custom_css_href(),
         )
 
+    def render_diary_post(
+        self,
+        post: dict[str, Any],
+        *,
+        home_url: str = "",
+        gtag_snippet: str = "",
+        index_href: str = "index.html",
+    ) -> str:
+        meta = post["metadata"]
+        use_math = meta.get("math", self.mathjax)
+        content, page_count = paginate_content(post["content"])
+        paginated = page_count > 1
+        template = self.env.get_template("diary_post.html")
+        return template.render(
+            site_title=self.site_title,
+            site_theme=self.theme,
+            assets_prefix=self._assets_prefix(),
+            title=meta["title"],
+            date=meta["date"],
+            description=meta["description"],
+            content=content,
+            theme=self._resolve_theme(meta),
+            custom_css=self._custom_css_href(),
+            mathjax=use_math,
+            paginated=paginated,
+            page_count=page_count,
+            home_url=home_url,
+            gtag_snippet=gtag_snippet,
+            index_href=index_href,
+        )
+
+    def render_diary_index(
+        self,
+        entries: list[dict[str, Any]],
+        *,
+        home_url: str = "",
+        gtag_snippet: str = "",
+    ) -> str:
+        template = self.env.get_template("diary_index.html")
+        return template.render(
+            site_title=self.site_title,
+            assets_prefix=self._assets_prefix(),
+            entries=entries,
+            custom_css=self._custom_css_href(),
+            home_url=home_url,
+            gtag_snippet=gtag_snippet,
+        )
+
     def render_index(self, posts: list[dict[str, Any]]) -> str:
         template = self.env.get_template("index.html")
         items = []

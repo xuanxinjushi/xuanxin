@@ -2,11 +2,13 @@
 
 from xuanxin.book import collect_book_markdown, default_book_output_dir, render_book
 from xuanxin.builder import BlogBuilder, render_file
+from xuanxin.diary import DiaryBuilder
 from xuanxin.processor import MarkdownProcessor, process_file, process_string
 
 __version__ = "0.1.1.dev0"
 __all__ = [
     "BlogBuilder",
+    "DiaryBuilder",
     "MarkdownProcessor",
     "collect_book_markdown",
     "default_book_output_dir",

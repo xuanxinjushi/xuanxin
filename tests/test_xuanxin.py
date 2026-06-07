@@ -645,3 +645,85 @@ def test_render_book(tmp_path):
     assert result_default["output_dir"] == str(default_out.resolve())
     assert default_out.exists()
     assert (default_out / "index.html").exists()
+
+
+def test_date_from_stem():
+    from datetime import datetime
+
+    from xuanxin.diary import date_from_stem, normalize_home_url
+
+    assert date_from_stem("20260506") == datetime(2026, 5, 6)
+    assert date_from_stem("not-a-date") is None
+    assert normalize_home_url("wu-99.com") == "https://wu-99.com"
+    assert normalize_home_url("https://example.com") == "https://example.com"
+
+
+def test_build_diary(tmp_path):
+    from xuanxin.diary import DiaryBuilder
+
+    input_dir = tmp_path / "diary_md"
+    input_dir.mkdir()
+    (input_dir / "20260506.md").write_text("# Morning walk\n\nSunny day.\n", encoding="utf-8")
+    (input_dir / "20260516.md").write_text(
+        "---\ntitle: Late spring\n---\n\nRainy afternoon.\n", encoding="utf-8"
+    )
+
+    gtag = tmp_path / "gtag.js"
+    gtag.write_text("<!-- gtag -->\n", encoding="utf-8")
+
+    out = tmp_path / "diary_html"
+    result = DiaryBuilder(
+        input_dir=input_dir,
+        output_dir=out,
+        home_url="wu-99.com",
+        gtag_path=gtag,
+        site_title="My Diary",
+    ).build()
+
+    assert result["count"] == 2
+    assert (out / "index.html").exists()
+    assert (out / "20260506.html").exists()
+    assert (out / "20260516.html").exists()
+    assert (out / "assets" / "theme.css").exists()
+
+    index = (out / "index.html").read_text(encoding="utf-8")
+    assert "My Diary" in index
+    assert 'href="20260506.html"' in index
+    assert 'href="20260516.html"' in index
+    assert 'href="https://wu-99.com"' in index
+    assert "<!-- gtag -->" in index
+
+    entry = (out / "20260506.html").read_text(encoding="utf-8")
+    assert "Morning walk" in entry
+    assert 'href="https://wu-99.com"' in entry
+    assert 'href="index.html"' in entry
+    assert "<!-- gtag -->" in entry
+
+
+def test_diary_cache_skips_unchanged(tmp_path):
+    import os
+    import time
+
+    from xuanxin.diary import DiaryBuilder
+
+    input_dir = tmp_path / "diary_md"
+    input_dir.mkdir()
+    md = input_dir / "20260606.md"
+    md.write_text("# Today\n\nFirst build.\n", encoding="utf-8")
+
+    out = tmp_path / "diary_html"
+    builder = DiaryBuilder(input_dir=input_dir, output_dir=out, home_url="wu-99.com")
+
+    first = builder.build()
+    assert len(first["built"]) == 2  # index + entry
+
+    second = builder.build()
+    assert second["built"] == []
+    assert len(second["skipped"]) == 2
+
+    time.sleep(0.05)
+    os.utime(md, None)
+
+    third = builder.build()
+    assert str(out / "20260606.html") in third["built"]
+    assert str(out / "index.html") in third["built"]

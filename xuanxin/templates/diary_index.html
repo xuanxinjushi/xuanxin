@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ site_title }}</title>
+  {% if gtag_snippet %}{{ gtag_snippet | safe }}{% endif %}
+  <link rel="stylesheet" href="{{ assets_prefix }}assets/theme.css">
+  {% if custom_css %}<link rel="stylesheet" href="{{ custom_css }}">{% endif %}
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <nav class="site-nav">
+        {% if home_url %}<a href="{{ home_url }}">← Home</a>{% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="index-hero">
+      <h1>{{ site_title }}</h1>
+      <p class="index-count">{{ entries | length }} entr{{ 'ies' if entries | length != 1 else 'y' }}</p>
+    </section>
+
+    <nav class="book-toc" aria-label="Diary entries">
+      <ol class="book-toc-list">
+        {% for entry in entries %}
+        <li class="book-toc-item">
+          <a href="{{ entry.href }}">
+            {% if entry.date %}<time datetime="{{ entry.date.isoformat() }}">{{ entry.date.strftime('%Y-%m-%d') }}</time> — {% endif %}
+            {{ entry.title }}
+          </a>
+        </li>
+        {% else %}
+        <li class="book-toc-item">No diary entries yet.</li>
+        {% endfor %}
+      </ol>
+    </nav>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>
+        {% if home_url %}<a href="{{ home_url }}">Home</a> · {% endif %}
+        Built with <a href="https://github.com/xuanxinjushi/xuanxin">xuanxin</a>
+      </p>
+    </div>
+  </footer>
+</body>
+</html>

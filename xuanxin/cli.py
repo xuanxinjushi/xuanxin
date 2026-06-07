@@ -10,6 +10,7 @@ from pathlib import Path
 from xuanxin import __version__
 from xuanxin.book import default_book_output_dir, discover_book_repo_root, render_book
 from xuanxin.builder import BlogBuilder, render_file
+from xuanxin.diary import DiaryBuilder
 from xuanxin.processor import MarkdownProcessor
 
 
@@ -100,6 +101,29 @@ def cmd_preview(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_diary(args: argparse.Namespace) -> int:
+    gtag = Path(args.gtag) if args.gtag else None
+    if gtag and not gtag.exists():
+        print(f"Warning: gtag file not found: {gtag}", file=sys.stderr)
+
+    builder = DiaryBuilder(
+        input_dir=Path(args.input),
+        output_dir=Path(args.output),
+        home_url=args.home,
+        gtag_path=gtag,
+        site_title=args.title,
+        theme=args.theme,
+        mathjax=not args.no_mathjax,
+    )
+    result = builder.build()
+    print(f"Built {result['count']} entr{'ies' if result['count'] != 1 else 'y'} → {args.output}")
+    for path in result["built"]:
+        print(f"  ✓ {path}")
+    if result["skipped"]:
+        print(f"Skipped {len(result['skipped'])} file(s) (up to date)")
+    return 0
+
+
 def cmd_themes(_args: argparse.Namespace) -> int:
     from xuanxin.renderer import DEFAULT_THEME_DIR
 
@@ -183,6 +207,16 @@ def main(argv: list[str] | None = None) -> int:
     preview = sub.add_parser("preview", help="Print HTML body for one markdown file")
     preview.add_argument("file", help="Markdown file path")
     preview.set_defaults(func=cmd_preview)
+
+    diary = sub.add_parser("diary", help="Build a flat diary site from dated Markdown files")
+    diary.add_argument("-i", "--input", required=True, help="Input folder with .md diary files")
+    diary.add_argument("-o", "--output", required=True, help="Output folder for HTML")
+    diary.add_argument("-gtag", default="", help="Path to gtag.js snippet to inject in <head>")
+    diary.add_argument("-home", default="", help="Home URL for back links (e.g. wu-99.com)")
+    diary.add_argument("-t", "--title", default="Diary", help="Diary index title")
+    diary.add_argument("--theme", default="default", help="Built-in theme name (default, dark, minimal)")
+    diary.add_argument("--no-mathjax", action="store_true", help="Disable MathJax for LaTeX")
+    diary.set_defaults(func=cmd_diary)
 
     themes = sub.add_parser("themes", help="List available built-in themes")
     themes.set_defaults(func=cmd_themes)
