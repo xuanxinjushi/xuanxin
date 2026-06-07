@@ -294,6 +294,11 @@ After gallery.
     assert ">500 USD</button>" not in content
     assert "After gallery." in content
 
+    single = process_string(">GALLERYS\n\n![](img/only.jpg)\n\n>GALLERYE\n")["content"]
+    assert "xuanxin-gallery-single" in single
+    assert "xuanxin-gallery-controls" not in single
+    assert "data-gallery-prev" not in single
+
     diary = Path("/home/wukong/xx-diary/20260607.md")
     if diary.is_file():
         html = MarkdownProcessor().process_file(diary)["content"]
@@ -805,6 +810,42 @@ def test_diary_copies_local_images(tmp_path):
     assert (out / "20260607" / "photo.jpg").read_bytes() == b"fake-jpeg"
     html = (out / "20260607.html").read_text(encoding="utf-8")
     assert 'src="20260607/photo.jpg"' in html
+
+
+def test_diary_converts_large_png_to_jpg(tmp_path):
+    import os
+
+    from PIL import Image
+
+    from xuanxin.diary import DiaryBuilder
+
+    input_dir = tmp_path / "diary_md"
+    img_dir = input_dir / "19890602"
+    img_dir.mkdir(parents=True)
+    png_path = img_dir / "n.png"
+    Image.frombytes("RGBA", (900, 900), os.urandom(900 * 900 * 4)).save(png_path, format="PNG")
+    assert png_path.stat().st_size > 100 * 1024
+
+    (input_dir / "19890602.md").write_text(
+        "# Old photo\n\n![](19890602/n.png)\n",
+        encoding="utf-8",
+    )
+
+    out = tmp_path / "diary_html"
+    DiaryBuilder(input_dir=input_dir, output_dir=out).build()
+
+    assert not (out / "19890602" / "n.png").exists()
+    jpg_path = out / "19890602" / "n_small.jpg"
+    assert jpg_path.exists()
+    assert jpg_path.stat().st_size > 0
+
+    source_jpg = input_dir / "19890602" / "n_small.jpg"
+    assert source_jpg.exists()
+    assert source_jpg.stat().st_size > 0
+
+    html = (out / "19890602.html").read_text(encoding="utf-8")
+    assert 'src="19890602/n_small.jpg"' in html
+    assert 'src="19890602/n.png"' not in html
 
 
 def test_diary_removes_stale_index_pages(tmp_path):

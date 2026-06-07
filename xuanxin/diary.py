@@ -11,7 +11,12 @@ from typing import Any
 
 import frontmatter
 
-from xuanxin.asset_copy import collect_asset_paths, copy_asset_tree, copy_assets
+from xuanxin.asset_copy import (
+    collect_asset_paths,
+    copy_asset_tree,
+    copy_assets,
+    rewrite_asset_paths,
+)
 from xuanxin.processor import MarkdownProcessor
 from xuanxin.renderer import BlogRenderer
 
@@ -103,21 +108,25 @@ class DiaryBuilder:
 
             raw_text = md_path.read_text(encoding="utf-8")
             asset_paths = collect_asset_paths(raw_text, result["content"])
-            copied_assets.extend(
-                copy_assets(asset_paths, source_root=self.input_dir, output_root=self.output_dir)
+            path_rewrites: dict[str, str] = {}
+            copied, asset_rewrites = copy_assets(
+                asset_paths, source_root=self.input_dir, output_root=self.output_dir
             )
+            copied_assets.extend(copied)
+            path_rewrites.update(asset_rewrites)
             asset_dir = self.input_dir / md_path.stem
             if asset_dir.is_dir():
-                copied_assets.extend(
-                    copy_asset_tree(
-                        asset_dir, source_root=self.input_dir, output_root=self.output_dir
-                    )
+                tree_copied, tree_rewrites = copy_asset_tree(
+                    asset_dir, source_root=self.input_dir, output_root=self.output_dir
                 )
+                copied_assets.extend(tree_copied)
+                path_rewrites.update(tree_rewrites)
 
             html_name = f"{md_path.stem}.html"
             out_file = self.output_dir / html_name
+            content = rewrite_asset_paths(result["content"], path_rewrites)
             html = renderer.render_diary_post(
-                result,
+                {**result, "content": content},
                 home_url=home_url,
                 gtag_snippet=gtag_snippet,
                 index_href="index.html",

@@ -516,6 +516,14 @@ body.xuanxin-paginated .prose .fullpage-image.is-rotated-side img {
   height: 188px;
 }
 
+.prose .xuanxin-gallery-single .xuanxin-gallery-viewport {
+  height: 188px;
+}
+
+.prose .xuanxin-gallery-single:not(.xuanxin-gallery-has-captions) .xuanxin-gallery-viewport {
+  height: 200px;
+}
+
 .prose .xuanxin-gallery-track {
   display: flex;
   height: 100%;

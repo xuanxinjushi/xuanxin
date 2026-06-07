@@ -49,20 +49,29 @@ def _build_carousel(slides: list[str], *, has_captions: bool) -> str:
             '  <button type="button" class="xuanxin-gallery-caption" hidden '
             'data-gallery-caption-bar aria-expanded="false"></button>\n'
         )
+    classes = ["xuanxin-gallery"]
+    if has_captions:
+        classes.append("xuanxin-gallery-has-captions")
+    if total <= 1:
+        classes.append("xuanxin-gallery-single")
+    controls = ""
+    if total > 1:
+        controls = (
+            '  <div class="xuanxin-gallery-controls">\n'
+            '    <button type="button" class="xuanxin-gallery-btn xuanxin-gallery-prev" '
+            'data-gallery-prev aria-label="Previous image">←</button>\n'
+            f'    <span class="xuanxin-gallery-indicator" data-gallery-indicator>1 / {total}</span>\n'
+            '    <button type="button" class="xuanxin-gallery-btn xuanxin-gallery-next" '
+            'data-gallery-next aria-label="Next image">→</button>\n'
+            "  </div>\n"
+        )
     return (
-        f'<div class="xuanxin-gallery{" xuanxin-gallery-has-captions" if has_captions else ""}" '
-        'data-gallery>\n'
+        f'<div class="{" ".join(classes)}" data-gallery>\n'
         '  <div class="xuanxin-gallery-viewport">\n'
         f'    <div class="xuanxin-gallery-track">{track}</div>\n'
         "  </div>\n"
         f"{caption_bar}"
-        '  <div class="xuanxin-gallery-controls">\n'
-        '    <button type="button" class="xuanxin-gallery-btn xuanxin-gallery-prev" '
-        'data-gallery-prev aria-label="Previous image">←</button>\n'
-        f'    <span class="xuanxin-gallery-indicator" data-gallery-indicator>1 / {total}</span>\n'
-        '    <button type="button" class="xuanxin-gallery-btn xuanxin-gallery-next" '
-        'data-gallery-next aria-label="Next image">→</button>\n'
-        "  </div>\n"
+        f"{controls}"
         "</div>"
     )
 
