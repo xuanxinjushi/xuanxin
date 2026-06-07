@@ -625,6 +625,78 @@ body.xuanxin-paginated .prose .fullpage-image.is-rotated-side img {
   color: var(--color-text-muted);
 }
 
+.prose .xuanxin-gallery-lock {
+  margin: 0.75rem 0;
+  border: 1px solid color-mix(in srgb, var(--color-border, #cbd5e1) 80%, transparent);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.prose .xuanxin-gallery-lock.is-unlocked .xuanxin-gallery-unlock {
+  display: none;
+}
+
+.prose .xuanxin-gallery-unlock {
+  margin: 0;
+  padding: 0.85rem 0.75rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.prose .xuanxin-gallery-unlock-label {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.prose .xuanxin-gallery-unlock-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.45rem;
+}
+
+.prose .xuanxin-gallery-unlock-input {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--color-border, #cbd5e1) 80%, transparent);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.prose .xuanxin-gallery-unlock-btn {
+  appearance: none;
+  border: 1px solid color-mix(in srgb, var(--color-border, #cbd5e1) 80%, transparent);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.75rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.prose .xuanxin-gallery-unlock-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.prose .xuanxin-gallery-unlock-error {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #dc2626;
+}
+
+.prose .xuanxin-gallery-lock .xuanxin-gallery {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.prose .xuanxin-gallery-lock .xuanxin-gallery[hidden] {
+  display: none;
+}
+
 .prose code {
   font-family: var(--font-mono);
   font-size: 0.88em;

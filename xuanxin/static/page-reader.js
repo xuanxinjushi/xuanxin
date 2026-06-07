@@ -464,6 +464,62 @@
     }, paginated ? 60 : 0);
   }
 
+  document.querySelectorAll("[data-gallery-lock]").forEach(function (lock) {
+    var hash = lock.getAttribute("data-gallery-password-hash") || "";
+    var form = lock.querySelector("[data-gallery-unlock]");
+    var gallery = lock.querySelector("[data-gallery]");
+    var storageKey = "xuanxin-gallery:" + hash;
+
+    function sha256(text) {
+      if (!window.crypto || !window.crypto.subtle) {
+        return Promise.resolve("");
+      }
+      return window.crypto.subtle
+        .digest("SHA-256", new TextEncoder().encode(text))
+        .then(function (buf) {
+          return Array.from(new Uint8Array(buf))
+            .map(function (b) {
+              return b.toString(16).padStart(2, "0");
+            })
+            .join("");
+        });
+    }
+
+    function unlock() {
+      lock.classList.add("is-unlocked");
+      if (gallery) gallery.hidden = false;
+      try {
+        sessionStorage.setItem(storageKey, "1");
+      } catch (err) {}
+    }
+
+    try {
+      if (sessionStorage.getItem(storageKey) === "1") {
+        unlock();
+        return;
+      }
+    } catch (err) {}
+
+    if (gallery) gallery.hidden = true;
+
+    if (!form) return;
+
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      var input = form.querySelector(".xuanxin-gallery-unlock-input");
+      var error = form.querySelector(".xuanxin-gallery-unlock-error");
+      var value = input ? input.value : "";
+      sha256(value).then(function (enteredHash) {
+        if (enteredHash && enteredHash === hash) {
+          if (error) error.hidden = true;
+          unlock();
+          return;
+        }
+        if (error) error.hidden = false;
+      });
+    });
+  });
+
   document.querySelectorAll("[data-gallery]").forEach(function (gallery) {
     var track = gallery.querySelector(".xuanxin-gallery-track");
     var slides = gallery.querySelectorAll(".xuanxin-gallery-slide");

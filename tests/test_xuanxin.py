@@ -266,6 +266,8 @@ def test_note_sections():
 
 
 def test_gallery_sections():
+    import hashlib
+
     sample = """# Day out
 
 >GALLERYS
@@ -298,6 +300,15 @@ After gallery.
     assert "xuanxin-gallery-single" in single
     assert "xuanxin-gallery-controls" not in single
     assert "data-gallery-prev" not in single
+
+    locked = process_string(
+        ">GALLERYS password: xuanxin\n\n![](img/a.jpg)\n\n>GALLERYE\n"
+    )["content"]
+    assert "data-gallery-lock" in locked
+    assert "data-gallery-unlock" in locked
+    assert "password: xuanxin" not in locked
+    assert f'data-gallery-password-hash="{hashlib.sha256(b"xuanxin").hexdigest()}"' in locked
+    assert 'data-gallery hidden' in locked or "data-gallery hidden>" in locked
 
     diary = Path("/home/wukong/xx-diary/20260607.md")
     if diary.is_file():
