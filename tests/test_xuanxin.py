@@ -896,6 +896,30 @@ def test_diary_normalizes_wrong_asset_folder_and_rewrites_png(tmp_path):
     assert (input_dir / "19890602" / "n_small.jpg").exists()
 
 
+def test_diary_uses_existing_small_jpg_when_markdown_refs_png(tmp_path):
+    from xuanxin.diary import DiaryBuilder, normalize_diary_asset_refs
+
+    input_dir = tmp_path / "diary_md"
+    img_dir = input_dir / "19890602"
+    img_dir.mkdir(parents=True)
+    (img_dir / "n_small.jpg").write_bytes(b"existing-jpeg")
+    (input_dir / "19890602.md").write_text("# Photo\n\n![](19890602/n.png)\n", encoding="utf-8")
+
+    normalized = normalize_diary_asset_refs(
+        (input_dir / "19890602.md").read_text(encoding="utf-8"),
+        "19890602",
+        input_dir,
+    )
+    assert "![](19890602/n_small.jpg)" in normalized
+    assert "n.png" not in normalized
+
+    out = tmp_path / "diary_html"
+    DiaryBuilder(input_dir=input_dir, output_dir=out).build()
+    html = (out / "19890602.html").read_text(encoding="utf-8")
+    assert 'src="19890602/n_small.jpg"' in html
+    assert (out / "19890602" / "n_small.jpg").read_bytes() == b"existing-jpeg"
+
+
 def test_diary_removes_stale_index_pages(tmp_path):
     from xuanxin.diary import DiaryBuilder
 

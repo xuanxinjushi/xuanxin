@@ -17,6 +17,7 @@ from xuanxin.asset_copy import (
     copy_assets,
     rewrite_asset_paths,
 )
+from xuanxin.image_convert import converted_png_jpg_path
 from xuanxin.processor import MarkdownProcessor
 from xuanxin.renderer import BlogRenderer
 
@@ -27,7 +28,7 @@ DEFAULT_INDEX_PAGE_SIZE = 20
 
 
 def normalize_diary_asset_refs(text: str, md_stem: str, input_dir: Path) -> str:
-    """Point image refs at ``{md_stem}/`` when the filename exists in that folder."""
+    """Normalize diary image refs to ``{md_stem}/`` and prefer existing ``_small.jpg``."""
     asset_dir = input_dir / md_stem
     if not asset_dir.is_dir():
         return text
@@ -35,8 +36,15 @@ def normalize_diary_asset_refs(text: str, md_stem: str, input_dir: Path) -> str:
     def repl(match: re.Match[str]) -> str:
         alt, path = match.group(1), _normalize_asset_ref(match.group(2))
         filename = Path(path).name
-        if (asset_dir / filename).is_file():
-            return f"![{alt}]({md_stem}/{filename})"
+        use_name = filename
+
+        if filename.lower().endswith(".png"):
+            small_name = converted_png_jpg_path(Path(filename)).name
+            if (asset_dir / small_name).is_file():
+                use_name = small_name
+
+        if (asset_dir / use_name).is_file() or (asset_dir / filename).is_file():
+            return f"![{alt}]({md_stem}/{use_name})"
         return match.group(0)
 
     return _DIARY_IMAGE_RE.sub(repl, text)
