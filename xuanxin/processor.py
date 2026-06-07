@@ -20,6 +20,7 @@ from xuanxin.extensions import (
     VideoEmbedExtension,
 )
 from xuanxin.footnotes import reorder_footnotes_before_chapter_poster
+from xuanxin.gallery_sections import process_gallery_sections
 from xuanxin.includes import find_peanut_config, load_config, process_includes
 from xuanxin.latex import protect_latex, restore_latex
 from xuanxin.note_sections import process_note_sections
@@ -118,6 +119,7 @@ class MarkdownProcessor:
 
         parsed = self._parse_metadata(metadata)
 
+        body = process_gallery_sections(body, self._render_markdown_fragment)
         body = process_note_sections(body, self._render_markdown_fragment)
         protected, placeholders = protect_latex(body)
         html = self._md.convert(protected)

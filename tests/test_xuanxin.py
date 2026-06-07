@@ -265,6 +265,44 @@ def test_note_sections():
         assert "特蕾西" in review_html
 
 
+def test_gallery_sections():
+    sample = """# Day out
+
+>GALLERYS
+
+![](img/a.jpg)
+![500 USD](img/b.jpg)
+![With the painter](img/c.jpg)
+
+>GALLERYE
+
+After gallery.
+"""
+    content = process_string(sample)["content"]
+    assert "GALLERYS" not in content
+    assert "GALLERYE" not in content
+    assert "xuanxin-gallery" in content
+    assert "data-gallery-prev" in content
+    assert "data-gallery-next" in content
+    assert content.count("xuanxin-gallery-slide") == 3
+    assert 'src="img/a.jpg"' in content
+    assert 'src="img/b.jpg"' in content
+    assert "xuanxin-gallery-has-captions" in content
+    assert 'data-caption="500 USD"' in content
+    assert 'data-caption="With the painter"' in content
+    assert "data-gallery-caption-bar" in content
+    assert ">500 USD</button>" not in content
+    assert "After gallery." in content
+
+    diary = Path("/home/wukong/xx-diary/20260607.md")
+    if diary.is_file():
+        html = MarkdownProcessor().process_file(diary)["content"]
+        assert "GALLERYS" not in html
+        assert "GALLERYE" not in html
+        assert "xuanxin-gallery" in html
+        assert html.count("xuanxin-gallery-slide") >= 10
+
+
 def test_section_nav():
     md = """# Chapter 4: 火 {-}
 
@@ -742,6 +780,31 @@ def test_diary_index_pagination(tmp_path):
 
     assert diary_index_filename(1) == "index.html"
     assert diary_index_filename(2) == "index-2.html"
+
+
+def test_diary_copies_local_images(tmp_path):
+    from xuanxin.diary import DiaryBuilder
+
+    input_dir = tmp_path / "diary_md"
+    img_dir = input_dir / "20260607"
+    img_dir.mkdir(parents=True)
+    (img_dir / "photo.jpg").write_bytes(b"fake-jpeg")
+    (input_dir / "20260607.md").write_text(
+        "# Day out\n\n"
+        ">GALLERYS\n\n"
+        "![](20260607/photo.jpg)\n\n"
+        ">GALLERYE\n",
+        encoding="utf-8",
+    )
+
+    out = tmp_path / "diary_html"
+    result = DiaryBuilder(input_dir=input_dir, output_dir=out).build()
+
+    assert result["count"] == 1
+    assert (out / "20260607" / "photo.jpg").exists()
+    assert (out / "20260607" / "photo.jpg").read_bytes() == b"fake-jpeg"
+    html = (out / "20260607.html").read_text(encoding="utf-8")
+    assert 'src="20260607/photo.jpg"' in html
 
 
 def test_diary_removes_stale_index_pages(tmp_path):

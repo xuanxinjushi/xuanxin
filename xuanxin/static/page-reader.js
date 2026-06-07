@@ -463,4 +463,72 @@
       navigateToSection(window.location.hash.slice(1));
     }, paginated ? 60 : 0);
   }
+
+  document.querySelectorAll("[data-gallery]").forEach(function (gallery) {
+    var track = gallery.querySelector(".xuanxin-gallery-track");
+    var slides = gallery.querySelectorAll(".xuanxin-gallery-slide");
+    var prevBtn = gallery.querySelector("[data-gallery-prev]");
+    var nextBtn = gallery.querySelector("[data-gallery-next]");
+    var indicator = gallery.querySelector("[data-gallery-indicator]");
+    var captionBar = gallery.querySelector("[data-gallery-caption-bar]");
+    if (!track || !slides.length) return;
+
+    var current = 0;
+    var total = slides.length;
+
+    function collapseCaption() {
+      if (captionBar) captionBar.setAttribute("aria-expanded", "false");
+    }
+
+    function syncCaption() {
+      if (!captionBar) return;
+      var caption = slides[current].getAttribute("data-caption") || "";
+      if (!caption) {
+        captionBar.hidden = true;
+        captionBar.textContent = "";
+        collapseCaption();
+        return;
+      }
+      captionBar.hidden = false;
+      captionBar.textContent = caption;
+      captionBar.setAttribute("aria-label", caption);
+      collapseCaption();
+    }
+
+    if (captionBar) {
+      captionBar.addEventListener("click", function () {
+        var expanded = captionBar.getAttribute("aria-expanded") === "true";
+        captionBar.setAttribute("aria-expanded", expanded ? "false" : "true");
+      });
+    }
+
+    function update() {
+      collapseCaption();
+      track.style.transform = "translateX(-" + (current * 100) + "%)";
+      if (indicator) indicator.textContent = (current + 1) + " / " + total;
+      if (prevBtn) prevBtn.disabled = current === 0;
+      if (nextBtn) nextBtn.disabled = current === total - 1;
+      syncCaption();
+    }
+
+    if (prevBtn) {
+      prevBtn.addEventListener("click", function () {
+        if (current > 0) {
+          current -= 1;
+          update();
+        }
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener("click", function () {
+        if (current < total - 1) {
+          current += 1;
+          update();
+        }
+      });
+    }
+
+    update();
+  });
 })();

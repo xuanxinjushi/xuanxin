@@ -11,6 +11,7 @@ from typing import Any
 
 import frontmatter
 
+from xuanxin.asset_copy import collect_asset_paths, copy_asset_tree, copy_assets
 from xuanxin.processor import MarkdownProcessor
 from xuanxin.renderer import BlogRenderer
 
@@ -93,11 +94,25 @@ class DiaryBuilder:
 
         entries: list[dict[str, Any]] = []
         built: list[str] = []
+        copied_assets: list[str] = []
 
         for md_path in md_files:
             result = self._process_diary_file(md_path)
             if not result:
                 continue
+
+            raw_text = md_path.read_text(encoding="utf-8")
+            asset_paths = collect_asset_paths(raw_text, result["content"])
+            copied_assets.extend(
+                copy_assets(asset_paths, source_root=self.input_dir, output_root=self.output_dir)
+            )
+            asset_dir = self.input_dir / md_path.stem
+            if asset_dir.is_dir():
+                copied_assets.extend(
+                    copy_asset_tree(
+                        asset_dir, source_root=self.input_dir, output_root=self.output_dir
+                    )
+                )
 
             html_name = f"{md_path.stem}.html"
             out_file = self.output_dir / html_name
@@ -148,6 +163,7 @@ class DiaryBuilder:
 
         return {
             "built": built,
+            "copied_assets": copied_assets,
             "count": len(entries),
             "index_pages": total_pages,
             "output_dir": str(self.output_dir),

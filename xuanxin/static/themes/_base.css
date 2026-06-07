@@ -497,6 +497,126 @@ body.xuanxin-paginated .prose .fullpage-image.is-rotated-side img {
   margin: 0 0 var(--prose-line-gap);
 }
 
+/* GALLERYS/GALLERYE image carousel */
+.prose .xuanxin-gallery {
+  margin: 0.75rem 0;
+  border: 1px solid color-mix(in srgb, var(--color-border, #cbd5e1) 80%, transparent);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.prose .xuanxin-gallery-viewport {
+  height: 168px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-bg) 92%, #000 8%);
+}
+
+.prose .xuanxin-gallery:not(.xuanxin-gallery-has-captions) .xuanxin-gallery-viewport {
+  height: 188px;
+}
+
+.prose .xuanxin-gallery-track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.25s ease;
+}
+
+.prose .xuanxin-gallery-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0.15rem;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prose .xuanxin-gallery-slide img {
+  max-height: 100%;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  margin: 0;
+}
+
+.prose .xuanxin-gallery-caption {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0.3rem 0.55rem;
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  text-align: left;
+  color: var(--color-text-muted);
+  background: color-mix(in srgb, var(--color-bg) 96%, transparent);
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--color-border, #cbd5e1) 80%, transparent);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prose .xuanxin-gallery-caption[hidden] {
+  display: none;
+}
+
+.prose .xuanxin-gallery-caption:hover {
+  color: var(--color-text);
+}
+
+.prose .xuanxin-gallery-caption[aria-expanded="true"] {
+  white-space: normal;
+  color: var(--color-text);
+  max-height: 4.5rem;
+  overflow-y: auto;
+}
+
+.prose .xuanxin-gallery-controls {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.45rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-border, #cbd5e1) 80%, transparent);
+}
+
+.prose .xuanxin-gallery-btn {
+  appearance: none;
+  border: 1px solid color-mix(in srgb, var(--color-border, #cbd5e1) 80%, transparent);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-radius: var(--radius-sm);
+  padding: 0.2rem 0.55rem;
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.prose .xuanxin-gallery-btn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.prose .xuanxin-gallery-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.prose .xuanxin-gallery-indicator {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
 .prose code {
   font-family: var(--font-mono);
   font-size: 0.88em;
