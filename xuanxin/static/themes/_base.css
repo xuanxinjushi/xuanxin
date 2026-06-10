@@ -57,17 +57,10 @@ body {
 .site-nav {
   display: flex;
   align-items: center;
+  flex: 1;
   flex-wrap: wrap;
   gap: 0.75rem;
   width: 100%;
-}
-
-.site-nav .lang-toggle {
-  margin-left: auto;
-  position: static;
-  top: auto;
-  right: auto;
-  z-index: auto;
 }
 
 .site-nav a:hover { color: var(--color-primary); }
@@ -1285,6 +1278,16 @@ body.xuanxin-has-section-nav .site-footer {
   color: #1e3a8a;
   border-color: #94a3b8;
   text-decoration: none;
+}
+
+/* In-header lang control (diary index): override fixed corner positioning above */
+.site-nav .lang-toggle {
+  margin: 0 0 0 auto;
+  position: static;
+  top: auto;
+  right: auto;
+  left: auto;
+  z-index: auto;
 }
 
 .diary-day-nav {
