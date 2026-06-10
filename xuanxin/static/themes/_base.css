@@ -63,7 +63,8 @@ body {
   width: 100%;
 }
 
-.site-nav a:hover { color: var(--color-primary); }
+.site-nav a:hover,
+.site-nav .lang-toggle:hover { color: var(--color-primary); }
 
 /* Index */
 .index-hero {
@@ -1254,40 +1255,19 @@ body.xuanxin-has-section-nav .site-footer {
   box-shadow: 0 2px 8px var(--color-shadow);
 }
 
-.lang-toggle {
-  position: fixed;
-  top: max(0.75rem, env(safe-area-inset-top, 0px));
-  right: max(0.75rem, env(safe-area-inset-right, 0px));
-  left: auto;
-  z-index: 1001;
-  margin: 0;
-  padding: 0.35rem 0.65rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.96);
-  font: inherit;
-  font-size: 0.8rem;
-  line-height: 1.4;
-  color: #64748b;
-  cursor: pointer;
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.12);
-  text-decoration: none;
-}
-
-.lang-toggle:hover {
-  color: #1e3a8a;
-  border-color: #94a3b8;
-  text-decoration: none;
-}
-
-/* In-header lang control (diary index): override fixed corner positioning above */
 .site-nav .lang-toggle {
-  margin: 0 0 0 auto;
-  position: static;
-  top: auto;
-  right: auto;
-  left: auto;
-  z-index: auto;
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: inherit;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  text-decoration: none;
 }
 
 .diary-day-nav {

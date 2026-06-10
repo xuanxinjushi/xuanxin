@@ -21,18 +21,18 @@
   <script src="{{ assets_prefix }}assets/page-reader.js" defer></script>
 </head>
 <body{% if paginated %} class="xuanxin-paginated"{% endif %}>
-  {% if lang_links|length > 1 %}
-    {% for link in lang_links %}
-      {% if not link.current %}
-  <a class="lang-toggle" href="{{ link.href }}" aria-label="Switch to {{ link.label }}">{{ link.label }}</a>
-      {% endif %}
-    {% endfor %}
-  {% endif %}
   <header class="site-header">
     <div class="container">
       <nav class="site-nav">
         {% if home_url %}<a href="{{ home_url }}">← Home</a>{% endif %}
         <a href="{{ index_href }}">All entries</a>
+        {% if lang_links|length > 1 %}
+          {% for link in lang_links %}
+            {% if not link.current %}
+        <a class="lang-toggle" href="{{ link.href }}" aria-label="Switch to {{ link.label }}">{{ link.label }}</a>
+            {% endif %}
+          {% endfor %}
+        {% endif %}
       </nav>
     </div>
   </header>
