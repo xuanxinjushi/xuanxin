@@ -882,7 +882,7 @@ def test_diary_converts_large_png_to_jpg(tmp_path):
     assert source_jpg.exists()
     assert source_jpg.stat().st_size > 0
 
-    html = (out / "19890602.html").read_text(encoding="utf-8")
+    html = (out / "19890602_zh.html").read_text(encoding="utf-8")
     assert 'src="19890602/n_small.jpg"' in html
     assert 'src="19890602/n.png"' not in html
 
@@ -913,7 +913,7 @@ def test_diary_normalizes_wrong_asset_folder_and_rewrites_png(tmp_path):
     out = tmp_path / "diary_html"
     DiaryBuilder(input_dir=input_dir, output_dir=out).build()
 
-    html = (out / "19890602.html").read_text(encoding="utf-8")
+    html = (out / "19890602_zh.html").read_text(encoding="utf-8")
     assert 'src="19890602/n_small.jpg"' in html
     assert "191890602/n.png" not in html
     assert (input_dir / "19890602" / "n_small.jpg").exists()
@@ -938,7 +938,7 @@ def test_diary_uses_existing_small_jpg_when_markdown_refs_png(tmp_path):
 
     out = tmp_path / "diary_html"
     DiaryBuilder(input_dir=input_dir, output_dir=out).build()
-    html = (out / "19890602.html").read_text(encoding="utf-8")
+    html = (out / "19890602_zh.html").read_text(encoding="utf-8")
     assert 'src="19890602/n_small.jpg"' in html
     assert (out / "19890602" / "n_small.jpg").read_bytes() == b"existing-jpeg"
 
