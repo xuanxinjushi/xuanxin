@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xuanxin"
-version = "0.1.1.dev0"
+version = "0.1.1.dev1"
 description = "Markdown blog to beautiful static HTML — write .md, customize CSS, publish."
 readme = "README.md"
 license = { text = "MIT" }
@@ -24,6 +24,7 @@ dependencies = [
     "jinja2>=3.1",
     "pygments>=2.17",
     "Pillow>=10.0",
+    "cryptography>=42.0",
 ]
 
 [project.optional-dependencies]
@@ -37,4 +38,4 @@ where = ["."]
 include = ["xuanxin*"]
 
 [tool.setuptools.package-data]
-xuanxin = ["templates/*", "static/themes/*", "static/themes/_base.css"]
+xuanxin = ["templates/*", "static/themes/*", "static/page-reader.js", "static/diary-index.js"]

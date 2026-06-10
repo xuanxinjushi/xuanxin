@@ -112,6 +112,9 @@ class BlogRenderer:
         home_url: str = "",
         gtag_snippet: str = "",
         index_href: str = "index.html",
+        prev_href: str | None = None,
+        next_href: str | None = None,
+        lang_links: list[dict[str, Any]] | None = None,
     ) -> str:
         meta = post["metadata"]
         use_math = meta.get("math", self.mathjax)
@@ -134,6 +137,9 @@ class BlogRenderer:
             home_url=home_url,
             gtag_snippet=gtag_snippet,
             index_href=index_href,
+            prev_href=prev_href,
+            next_href=next_href,
+            lang_links=lang_links or [],
         )
 
     def render_diary_index(
@@ -148,6 +154,7 @@ class BlogRenderer:
         list_start: int = 1,
         prev_href: str | None = None,
         next_href: str | None = None,
+        index_langs: list[dict[str, Any]] | None = None,
     ) -> str:
         template = self.env.get_template("diary_index.html")
         return template.render(
@@ -163,6 +170,7 @@ class BlogRenderer:
             list_start=list_start,
             prev_href=prev_href,
             next_href=next_href,
+            index_langs=index_langs or [],
         )
 
     def render_index(self, posts: list[dict[str, Any]]) -> str:
@@ -233,3 +241,7 @@ class BlogRenderer:
         page_reader_js = PACKAGE_DIR / "static" / "page-reader.js"
         if page_reader_js.exists():
             shutil.copy2(page_reader_js, assets / "page-reader.js")
+
+        diary_index_js = PACKAGE_DIR / "static" / "diary-index.js"
+        if diary_index_js.exists():
+            shutil.copy2(diary_index_js, assets / "diary-index.js")

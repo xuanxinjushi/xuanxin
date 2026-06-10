@@ -17,6 +17,15 @@ from xuanxin.asset_copy import (
     copy_assets,
     rewrite_asset_paths,
 )
+from xuanxin.diary_i18n import (
+    build_alternates_meta,
+    build_day_navigation,
+    group_entries_by_date,
+    index_language_options,
+    language_links_for,
+    parse_diary_stem,
+)
+from xuanxin.gallery_sections import collect_locked_gallery_assets, mark_encrypted_gallery_media
 from xuanxin.image_convert import converted_png_jpg_path
 from xuanxin.processor import MarkdownProcessor
 from xuanxin.renderer import BlogRenderer
@@ -27,9 +36,16 @@ _DIARY_IMAGE_RE = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
 DEFAULT_INDEX_PAGE_SIZE = 20
 
 
+def asset_dir_name(stem: str) -> str:
+    """Return the asset folder name for a diary markdown stem."""
+    base_date, _lang = parse_diary_stem(stem)
+    return base_date
+
+
 def normalize_diary_asset_refs(text: str, md_stem: str, input_dir: Path) -> str:
-    """Normalize diary image refs to ``{md_stem}/`` and prefer existing ``_small.jpg``."""
-    asset_dir = input_dir / md_stem
+    """Normalize diary image refs to ``{YYYYMMDD}/`` and prefer existing ``_small.jpg``."""
+    asset_key = asset_dir_name(md_stem)
+    asset_dir = input_dir / asset_key
     if not asset_dir.is_dir():
         return text
 
@@ -44,10 +60,32 @@ def normalize_diary_asset_refs(text: str, md_stem: str, input_dir: Path) -> str:
                 use_name = small_name
 
         if (asset_dir / use_name).is_file() or (asset_dir / filename).is_file():
-            return f"![{alt}]({md_stem}/{use_name})"
+            return f"![{alt}]({asset_key}/{use_name})"
         return match.group(0)
 
     return _DIARY_IMAGE_RE.sub(repl, text)
+
+
+def build_encrypt_paths(
+    raw_text: str,
+    asset_paths: set[str],
+    md_stem: str,
+    input_dir: Path,
+) -> dict[str, str]:
+    """Map output asset paths to gallery passwords for encrypted publishing."""
+    normalized = normalize_diary_asset_refs(raw_text, md_stem, input_dir)
+    locked = collect_locked_gallery_assets(normalized)
+    if not locked:
+        return {}
+
+    encrypt_paths: dict[str, str] = {}
+    for path in asset_paths:
+        filename = Path(path).name
+        for locked_path, password in locked.items():
+            if path == locked_path or Path(locked_path).name == filename:
+                encrypt_paths[path] = password
+                break
+    return encrypt_paths
 
 
 def _normalize_asset_ref(path: str) -> str:
@@ -56,7 +94,8 @@ def _normalize_asset_ref(path: str) -> str:
 
 def date_from_stem(stem: str) -> datetime | None:
     """Parse YYYYMMDD filename stems into a datetime."""
-    match = _DATE_STEM_RE.match(stem)
+    base_date, _lang = parse_diary_stem(stem)
+    match = _DATE_STEM_RE.match(base_date)
     if not match:
         return None
     year, month, day = (int(match.group(i)) for i in range(1, 4))
@@ -126,7 +165,7 @@ class DiaryBuilder:
             p for p in self.input_dir.glob("*.md") if p.is_file() and not p.name.startswith(".")
         )
 
-        entries: list[dict[str, Any]] = []
+        processed: list[dict[str, Any]] = []
         built: list[str] = []
         copied_assets: list[str] = []
 
@@ -138,16 +177,24 @@ class DiaryBuilder:
                 continue
 
             asset_paths = collect_asset_paths(raw_text, result["content"])
+            encrypt_paths = build_encrypt_paths(raw_text, asset_paths, md_path.stem, self.input_dir)
             path_rewrites: dict[str, str] = {}
             copied, asset_rewrites = copy_assets(
-                asset_paths, source_root=self.input_dir, output_root=self.output_dir
+                asset_paths,
+                source_root=self.input_dir,
+                output_root=self.output_dir,
+                encrypt_paths=encrypt_paths,
             )
             copied_assets.extend(copied)
             path_rewrites.update(asset_rewrites)
-            asset_dir = self.input_dir / md_path.stem
+
+            asset_dir = self.input_dir / asset_dir_name(md_path.stem)
             if asset_dir.is_dir():
                 tree_copied, tree_rewrites = copy_asset_tree(
-                    asset_dir, source_root=self.input_dir, output_root=self.output_dir
+                    asset_dir,
+                    source_root=self.input_dir,
+                    output_root=self.output_dir,
+                    encrypt_paths=encrypt_paths,
                 )
                 copied_assets.extend(tree_copied)
                 path_rewrites.update(tree_rewrites)
@@ -155,31 +202,49 @@ class DiaryBuilder:
             html_name = f"{md_path.stem}.html"
             out_file = self.output_dir / html_name
             content = rewrite_asset_paths(result["content"], path_rewrites)
-            html = renderer.render_diary_post(
-                {**result, "content": content},
-                home_url=home_url,
-                gtag_snippet=gtag_snippet,
-                index_href="index.html",
-            )
-            out_file.write_text(html, encoding="utf-8")
-            built.append(str(out_file))
+            if encrypt_paths:
+                content = mark_encrypted_gallery_media(content)
 
-            entries.append(
+            processed.append(
                 {
+                    "stem": md_path.stem,
+                    "html_name": html_name,
                     "title": result["metadata"]["title"],
-                    "href": html_name,
                     "date": result["metadata"]["date"],
-                    "source": str(md_path),
+                    "content": content,
+                    "result": result,
                 }
             )
 
-        entries.sort(key=lambda item: item["date"], reverse=True)
+        index_entries, alternates = group_entries_by_date(processed)
+        alternates_meta = build_alternates_meta(processed)
+        day_nav = build_day_navigation(processed)
+        index_langs = index_language_options(alternates)
+
+        for item in processed:
+            html_name = item["html_name"]
+            nav = day_nav.get(html_name, {})
+            html = renderer.render_diary_post(
+                {**item["result"], "content": item["content"]},
+                home_url=home_url,
+                gtag_snippet=gtag_snippet,
+                index_href="index.html",
+                prev_href=nav.get("prev_href"),
+                next_href=nav.get("next_href"),
+                lang_links=language_links_for(html_name, alternates, item["stem"]),
+            )
+            out_file = self.output_dir / html_name
+            out_file.write_text(html, encoding="utf-8")
+            built.append(str(out_file))
 
         page_size = max(1, self.index_page_size)
-        total_pages = index_page_count(len(entries), page_size)
+        total_pages = index_page_count(len(index_entries), page_size)
         for page in range(1, total_pages + 1):
             start = (page - 1) * page_size
-            page_entries = entries[start : start + page_size]
+            page_entries = index_entries[start : start + page_size]
+            for entry in page_entries:
+                base_date = entry["base_date"]
+                entry["lang_entries"] = alternates_meta.get(base_date, {})
             index_name = diary_index_filename(page)
             index_path = self.output_dir / index_name
             prev_href = diary_index_filename(page - 1) if page > 1 else None
@@ -190,10 +255,11 @@ class DiaryBuilder:
                 gtag_snippet=gtag_snippet,
                 page=page,
                 total_pages=total_pages,
-                total_entries=len(entries),
+                total_entries=len(index_entries),
                 list_start=(page - 1) * page_size + 1,
                 prev_href=prev_href,
                 next_href=next_href,
+                index_langs=index_langs,
             )
             index_path.write_text(index_html, encoding="utf-8")
             built.append(str(index_path))
@@ -203,7 +269,8 @@ class DiaryBuilder:
         return {
             "built": built,
             "copied_assets": copied_assets,
-            "count": len(entries),
+            "count": len(index_entries),
+            "entries": len(processed),
             "index_pages": total_pages,
             "output_dir": str(self.output_dir),
         }
@@ -222,6 +289,7 @@ class DiaryBuilder:
             return None
 
         meta = result["metadata"]
+        base_date, _lang = parse_diary_stem(md_path.stem)
         file_date = date_from_stem(md_path.stem)
         if file_date and "date" not in post.metadata:
             meta["date"] = file_date

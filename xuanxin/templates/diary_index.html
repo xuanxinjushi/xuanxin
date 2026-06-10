@@ -7,8 +7,13 @@
   {% if gtag_snippet %}{{ gtag_snippet | safe }}{% endif %}
   <link rel="stylesheet" href="{{ assets_prefix }}assets/theme.css">
   {% if custom_css %}<link rel="stylesheet" href="{{ custom_css }}">{% endif %}
+  {% if index_langs|length > 1 %}<script src="{{ assets_prefix }}assets/diary-index.js" defer></script>{% endif %}
 </head>
 <body>
+  {% if index_langs|length > 1 %}
+  <button type="button" class="lang-toggle" data-diary-lang-toggle data-current-lang="en" aria-label="切换到中文">中文</button>
+  {% endif %}
+
   <header class="site-header">
     <div class="container">
       <nav class="site-nav">
@@ -42,10 +47,10 @@
     <nav class="book-toc" aria-label="Diary entries">
       <ol class="book-toc-list"{% if entries %} start="{{ list_start }}"{% endif %}>
         {% for entry in entries %}
-        <li class="book-toc-item">
-          <a href="{{ entry.href }}">
+        <li class="book-toc-item"{% if entry.lang_entries %} data-lang-entries='{{ entry.lang_entries | tojson }}'{% endif %}>
+          <a href="{{ entry.href }}" data-diary-entry-link>
             {% if entry.date %}<time datetime="{{ entry.date.isoformat() }}">{{ entry.date.strftime('%Y-%m-%d') }}</time> — {% endif %}
-            {{ entry.title }}
+            <span data-diary-entry-title>{{ entry.title }}</span>
           </a>
         </li>
         {% else %}

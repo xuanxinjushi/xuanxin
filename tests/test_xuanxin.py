@@ -310,6 +310,10 @@ After gallery.
     assert f'data-gallery-password-hash="{hashlib.sha256(b"xuanxin").hexdigest()}"' in locked
     assert 'data-gallery hidden' in locked or "data-gallery hidden>" in locked
 
+    video = process_string(">GALLERYS\n\n![](clip/demo.mp4)\n\n>GALLERYE\n")["content"]
+    assert "xuanxin-gallery-video" in video
+    assert 'src="clip/demo.mp4"' in video
+
     diary = Path("/home/wukong/xx-diary/20260607.md")
     if diary.is_file():
         html = MarkdownProcessor().process_file(diary)["content"]
@@ -714,7 +718,13 @@ def test_dev_version_uses_git_commit_hash():
 
         pytest.skip("git commit hash unavailable")
     assert resolve_version("0.1.1.dev0") == commit
-    assert __version__ == commit
+
+    from xuanxin._version import BASE_VERSION
+
+    if ".dev" in BASE_VERSION:
+        assert __version__ == commit
+    else:
+        assert __version__ == BASE_VERSION
 
 
 def test_date_from_stem():
@@ -767,6 +777,8 @@ def test_build_diary(tmp_path):
     assert "Morning walk" in entry
     assert 'href="https://wu-99.com"' in entry
     assert 'href="index.html"' in entry
+    assert "Next day →" in entry
+    assert "← Previous day" not in entry
     assert "<!-- gtag -->" in entry
 
 
@@ -950,3 +962,84 @@ def test_diary_removes_stale_index_pages(tmp_path):
     assert (out / "index.html").exists()
     assert not (out / "index-2.html").exists()
     assert not (out / "index-3.html").exists()
+
+
+def test_diary_bilingual_and_day_nav(tmp_path):
+    from xuanxin.diary import DiaryBuilder
+
+    input_dir = tmp_path / "diary_md"
+    input_dir.mkdir()
+    (input_dir / "20260608.md").write_text("# English day\n\nHello.\n", encoding="utf-8")
+    (input_dir / "20260608_zh.md").write_text("# 中文日\n\n你好。\n", encoding="utf-8")
+    (input_dir / "20260609.md").write_text("# Next day\n\nLater.\n", encoding="utf-8")
+
+    out = tmp_path / "diary_html"
+    DiaryBuilder(input_dir=input_dir, output_dir=out).build()
+
+    en = (out / "20260608.html").read_text(encoding="utf-8")
+    zh = (out / "20260608_zh.html").read_text(encoding="utf-8")
+    assert 'class="lang-toggle"' in en
+    assert 'href="20260608_zh.html"' in en
+    assert "中文" in en
+    assert 'href="20260608.html"' in zh
+    assert "English" in zh
+    assert 'href="20260609.html"' in en
+    assert "Next day →" in en
+    assert "← Previous day" not in en
+    assert 'href="20260608.html"' in (out / "20260609.html").read_text(encoding="utf-8")
+
+    index = (out / "index.html").read_text(encoding="utf-8")
+    assert index.count("20260608") >= 1
+    assert "data-diary-lang-toggle" in index
+    assert 'class="lang-toggle"' in index
+    assert "data-lang-entries" in index
+    assert "data-diary-entry-title" in index
+    assert "diary-index-langs" not in index
+    assert "diary-lang-switch" not in index
+
+
+def test_diary_encrypts_locked_gallery_assets(tmp_path):
+    from xuanxin.diary import DiaryBuilder
+    from xuanxin.gallery_crypto import decrypt_bytes, encrypt_bytes
+
+    input_dir = tmp_path / "diary_md"
+    asset_dir = input_dir / "20260610"
+    asset_dir.mkdir(parents=True)
+    secret = asset_dir / "secret.jpg"
+    secret.write_bytes(b"secret-image-bytes")
+
+    (input_dir / "20260610.md").write_text(
+        "# Locked\n\n>GALLERYS password: testpass\n\n![](20260610/secret.jpg)\n\n>GALLERYE\n",
+        encoding="utf-8",
+    )
+
+    out = tmp_path / "diary_html"
+    DiaryBuilder(input_dir=input_dir, output_dir=out).build()
+
+    enc_path = out / "20260610" / "secret.jpg.enc"
+    plain_path = out / "20260610" / "secret.jpg"
+    assert enc_path.is_file()
+    assert not plain_path.is_file()
+
+    html = (out / "20260610.html").read_text(encoding="utf-8")
+    assert 'data-encrypted-src="20260610/secret.jpg.enc"' in html
+    assert 'src="20260610/secret.jpg"' not in html
+    assert "secret-image-bytes" not in html
+
+    payload = enc_path.read_bytes()
+    assert payload[:8] == b"xuanxin1"
+    assert decrypt_bytes(payload, "testpass") == b"secret-image-bytes"
+
+
+def test_gallery_crypto_roundtrip():
+    import pytest
+    from cryptography.exceptions import InvalidTag
+
+    from xuanxin.gallery_crypto import decrypt_bytes, encrypt_bytes
+
+    plain = b"hello encrypted world"
+    blob = encrypt_bytes(plain, "pw")
+    assert blob.startswith(b"xuanxin1")
+    assert decrypt_bytes(blob, "pw") == plain
+    with pytest.raises(InvalidTag):
+        decrypt_bytes(blob, "wrong")

@@ -552,6 +552,22 @@ body.xuanxin-paginated .prose .fullpage-image.is-rotated-side img {
   margin: 0;
 }
 
+.prose .xuanxin-gallery-slide video,
+.prose .xuanxin-gallery-video {
+  max-height: 100%;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  margin: 0;
+  background: #000;
+}
+
+.prose .xuanxin-encrypted-media[hidden] {
+  display: none;
+}
+
 .prose .xuanxin-gallery-caption {
   display: block;
   width: 100%;
@@ -1227,6 +1243,37 @@ body.xuanxin-has-section-nav .site-footer {
 .book-toc-item a:hover {
   border-color: var(--color-primary);
   box-shadow: 0 2px 8px var(--color-shadow);
+}
+
+.lang-toggle {
+  position: fixed;
+  top: max(0.75rem, env(safe-area-inset-top, 0px));
+  right: max(0.75rem, env(safe-area-inset-right, 0px));
+  z-index: 1001;
+  margin: 0;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.96);
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #64748b;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.12);
+  text-decoration: none;
+}
+
+.lang-toggle:hover {
+  color: #1e3a8a;
+  border-color: #94a3b8;
+  text-decoration: none;
+}
+
+.diary-day-nav {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-border, #cbd5e1) 80%, transparent);
 }
 
 /* Chapter prev/next navigation */

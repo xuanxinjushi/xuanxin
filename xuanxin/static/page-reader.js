@@ -469,6 +469,7 @@
     var form = lock.querySelector("[data-gallery-unlock]");
     var gallery = lock.querySelector("[data-gallery]");
     var storageKey = "xuanxin-gallery:" + hash;
+    var pwdStorageKey = storageKey + ":pwd";
 
     function sha256(text) {
       if (!window.crypto || !window.crypto.subtle) {
@@ -485,17 +486,102 @@
         });
     }
 
-    function unlock() {
+    function deriveKey(password, salt) {
+      return window.crypto.subtle
+        .importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"])
+        .then(function (keyMaterial) {
+          return window.crypto.subtle.deriveBits(
+            {
+              name: "PBKDF2",
+              salt: salt,
+              iterations: 120000,
+              hash: "SHA-256",
+            },
+            keyMaterial,
+            256
+          );
+        })
+        .then(function (bits) {
+          return window.crypto.subtle.importKey(
+            "raw",
+            bits,
+            { name: "AES-GCM" },
+            false,
+            ["decrypt"]
+          );
+        });
+    }
+
+    function decryptAsset(data, password) {
+      var bytes = new Uint8Array(data);
+      if (new TextDecoder().decode(bytes.slice(0, 8)) !== "xuanxin1") {
+        return Promise.reject(new Error("bad format"));
+      }
+      var salt = bytes.slice(8, 24);
+      var nonce = bytes.slice(24, 36);
+      var ciphertext = bytes.slice(36);
+      return deriveKey(password, salt).then(function (key) {
+        return window.crypto.subtle.decrypt({ name: "AES-GCM", iv: nonce }, key, ciphertext);
+      });
+    }
+
+    function guessMime(path, kind) {
+      if (kind === "video") {
+        var ext = (path.split(".").pop() || "").toLowerCase();
+        if (ext === "webm") return "video/webm";
+        if (ext === "mov") return "video/quicktime";
+        if (ext === "ogv") return "video/ogg";
+        return "video/mp4";
+      }
+      var ext = (path.split(".").pop() || "").toLowerCase();
+      if (ext === "png") return "image/png";
+      if (ext === "gif") return "image/gif";
+      if (ext === "webp") return "image/webp";
+      return "image/jpeg";
+    }
+
+    function hydrateEncryptedMedia(container, password) {
+      var nodes = container.querySelectorAll("[data-encrypted-src]");
+      if (!nodes.length || !password || !window.crypto || !window.crypto.subtle) {
+        return Promise.resolve();
+      }
+      return Promise.all(
+        Array.prototype.map.call(nodes, function (node) {
+          var encSrc = node.getAttribute("data-encrypted-src");
+          if (!encSrc) return Promise.resolve();
+          return fetch(encSrc)
+            .then(function (resp) {
+              if (!resp.ok) throw new Error("fetch failed");
+              return resp.arrayBuffer();
+            })
+            .then(function (buf) {
+              return decryptAsset(buf, password);
+            })
+            .then(function (plain) {
+              var kind = node.getAttribute("data-media-kind") || "image";
+              var logicalSrc = encSrc.replace(/\.enc$/, "");
+              var blob = new Blob([plain], { type: guessMime(logicalSrc, kind) });
+              var url = URL.createObjectURL(blob);
+              node.removeAttribute("hidden");
+              node.src = url;
+            });
+        })
+      );
+    }
+
+    function unlock(password) {
       lock.classList.add("is-unlocked");
       if (gallery) gallery.hidden = false;
+      hydrateEncryptedMedia(lock, password).catch(function () {});
       try {
         sessionStorage.setItem(storageKey, "1");
+        if (password) sessionStorage.setItem(pwdStorageKey, password);
       } catch (err) {}
     }
 
     try {
       if (sessionStorage.getItem(storageKey) === "1") {
-        unlock();
+        unlock(sessionStorage.getItem(pwdStorageKey) || "");
         return;
       }
     } catch (err) {}
@@ -512,7 +598,7 @@
       sha256(value).then(function (enteredHash) {
         if (enteredHash && enteredHash === hash) {
           if (error) error.hidden = true;
-          unlock();
+          unlock(value);
           return;
         }
         if (error) error.hidden = false;

@@ -5,7 +5,7 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-BASE_VERSION = "0.1.1.dev0"
+BASE_VERSION = "0.1.1.dev1"
 
 
 def _repo_root() -> Path:
