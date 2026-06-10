@@ -54,6 +54,22 @@ body {
   font-size: 0.9rem;
 }
 
+.site-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.site-nav .lang-toggle {
+  margin-left: auto;
+  position: static;
+  top: auto;
+  right: auto;
+  z-index: auto;
+}
+
 .site-nav a:hover { color: var(--color-primary); }
 
 /* Index */
@@ -1249,6 +1265,7 @@ body.xuanxin-has-section-nav .site-footer {
   position: fixed;
   top: max(0.75rem, env(safe-area-inset-top, 0px));
   right: max(0.75rem, env(safe-area-inset-right, 0px));
+  left: auto;
   z-index: 1001;
   margin: 0;
   padding: 0.35rem 0.65rem;
