@@ -24,8 +24,10 @@
   <header class="site-header">
     <div class="container">
       <nav class="site-nav">
-        {% if home_url %}<a href="{{ home_url }}">← Home</a>{% endif %}
-        <a href="{{ index_href }}">All entries</a>
+        <div class="site-nav-start">
+          {% if home_url %}<a href="{{ home_url }}">← Home</a>{% endif %}
+          <a href="{{ index_href }}">All entries</a>
+        </div>
         {% if lang_links|length > 1 %}
           {% for link in lang_links %}
             {% if not link.current %}
