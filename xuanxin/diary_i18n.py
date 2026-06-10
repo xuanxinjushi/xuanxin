@@ -13,6 +13,65 @@ LANG_LABELS = {
     "zh": "中文",
 }
 
+DIARY_UI: dict[str, dict[str, str]] = {
+    "en": {
+        "html_lang": "en",
+        "home": "← Home",
+        "home_footer": "Home",
+        "all_entries": "All entries",
+        "diary_index": "Diary index",
+        "index": "Index",
+        "prev_day": "← Previous day",
+        "next_day": "Next day →",
+        "newer": "← Newer",
+        "older": "Older →",
+        "prev_page": "← Previous page",
+        "next_page": "Next page →",
+        "switch_to": "Switch to {label}",
+        "entries_one": "entry",
+        "entries_many": "entries",
+        "page_of": "· page {page} of {total}",
+        "no_entries": "No diary entries yet.",
+    },
+    "zh": {
+        "html_lang": "zh-Hans",
+        "home": "← 首页",
+        "home_footer": "首页",
+        "all_entries": "全部日记",
+        "diary_index": "日记目录",
+        "index": "目录",
+        "prev_day": "← 前一天",
+        "next_day": "后一天 →",
+        "newer": "← 较新",
+        "older": "较旧 →",
+        "prev_page": "← 上一页",
+        "next_page": "下一页 →",
+        "switch_to": "切换到{label}",
+        "entries_one": "篇",
+        "entries_many": "篇",
+        "page_of": "· 第 {page} / {total} 页",
+        "no_entries": "还没有日记。",
+    },
+}
+
+
+def diary_ui(lang: str) -> dict[str, str]:
+    return DIARY_UI.get(lang, DIARY_UI["en"])
+
+
+def html_lang_attr(lang: str) -> str:
+    return diary_ui(lang)["html_lang"]
+
+
+def format_diary_date(value: datetime, lang: str) -> str:
+    if lang == "zh":
+        return f"{value.year}年{value.month}月{value.day}日"
+    return value.strftime("%B %d, %Y")
+
+
+def switch_to_label(lang: str, target_label: str) -> str:
+    return diary_ui(lang)["switch_to"].format(label=target_label)
+
 
 def parse_diary_stem(stem: str) -> tuple[str, str]:
     """Return ``(base_date, lang)`` for diary markdown stems."""

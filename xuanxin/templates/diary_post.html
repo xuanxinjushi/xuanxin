@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ html_lang }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -25,13 +25,13 @@
     <div class="container">
       <nav class="site-nav">
         <div class="site-nav-start">
-          {% if home_url %}<a href="{{ home_url }}">← Home</a>{% endif %}
-          <a href="{{ index_href }}">All entries</a>
+          {% if home_url %}<a href="{{ home_url }}">{{ ui.home }}</a>{% endif %}
+          <a href="{{ index_href }}">{{ ui.all_entries }}</a>
         </div>
         {% if lang_links|length > 1 %}
           {% for link in lang_links %}
             {% if not link.current %}
-        <a class="lang-toggle" href="{{ link.href }}" aria-label="Switch to {{ link.label }}">{{ link.label }}</a>
+        <a class="lang-toggle" href="{{ link.href }}" aria-label="{{ switch_to_label(lang, link.label) }}">{{ link.label }}</a>
             {% endif %}
           {% endfor %}
         {% endif %}
@@ -45,16 +45,16 @@
         <h1 class="post-title">{{ title }}</h1>
         {% if date %}
         <div class="post-meta">
-          <time datetime="{{ date.isoformat() }}">{{ date.strftime('%B %d, %Y') }}</time>
+          <time datetime="{{ date.isoformat() }}">{{ date_display }}</time>
         </div>
         {% endif %}
       </header>
 
       {% if paginated %}
       <nav class="page-nav" aria-label="Page navigation">
-        <button type="button" class="page-nav-btn page-nav-prev" data-page-action="prev" aria-label="Previous page">←</button>
+        <button type="button" class="page-nav-btn page-nav-prev" data-page-action="prev" aria-label="{{ ui.prev_page }}">←</button>
         <span class="page-nav-indicator"><span data-page-current>1</span> / <span data-page-total>{{ page_count }}</span></span>
-        <button type="button" class="page-nav-btn page-nav-next" data-page-action="next" aria-label="Next page">→</button>
+        <button type="button" class="page-nav-btn page-nav-next" data-page-action="next" aria-label="{{ ui.next_page }}">→</button>
       </nav>
       {% endif %}
 
@@ -64,22 +64,22 @@
 
       {% if paginated %}
       <nav class="page-nav page-nav-bottom" aria-label="Page navigation">
-        <button type="button" class="page-nav-btn page-nav-prev" data-page-action="prev" aria-label="Previous page">← Previous page</button>
+        <button type="button" class="page-nav-btn page-nav-prev" data-page-action="prev" aria-label="{{ ui.prev_page }}">{{ ui.prev_page }}</button>
         <span class="page-nav-indicator"><span data-page-current>1</span> / <span data-page-total>{{ page_count }}</span></span>
-        <button type="button" class="page-nav-btn page-nav-next" data-page-action="next" aria-label="Next page">Next page →</button>
+        <button type="button" class="page-nav-btn page-nav-next" data-page-action="next" aria-label="{{ ui.next_page }}">{{ ui.next_page }}</button>
       </nav>
       {% endif %}
 
       {% if prev_href or next_href %}
       <nav class="chapter-nav chapter-nav-bottom diary-day-nav" aria-label="Diary day navigation">
         {% if prev_href %}
-        <a class="chapter-nav-prev" href="{{ prev_href }}">← Previous day</a>
+        <a class="chapter-nav-prev" href="{{ prev_href }}">{{ ui.prev_day }}</a>
         {% else %}
         <span class="chapter-nav-spacer"></span>
         {% endif %}
-        <a class="chapter-nav-index" href="{{ index_href }}">Index</a>
+        <a class="chapter-nav-index" href="{{ index_href }}">{{ ui.index }}</a>
         {% if next_href %}
-        <a class="chapter-nav-next" href="{{ next_href }}">Next day →</a>
+        <a class="chapter-nav-next" href="{{ next_href }}">{{ ui.next_day }}</a>
         {% else %}
         <span class="chapter-nav-spacer"></span>
         {% endif %}
@@ -91,8 +91,8 @@
   <footer class="site-footer">
     <div class="container">
       <p>
-        {% if home_url %}<a href="{{ home_url }}">Home</a> · {% endif %}
-        <a href="{{ index_href }}">Diary index</a>
+        {% if home_url %}<a href="{{ home_url }}">{{ ui.home_footer }}</a> · {% endif %}
+        <a href="{{ index_href }}">{{ ui.diary_index }}</a>
       </p>
     </div>
   </footer>

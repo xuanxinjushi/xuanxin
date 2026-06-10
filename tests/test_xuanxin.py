@@ -972,6 +972,7 @@ def test_diary_bilingual_and_day_nav(tmp_path):
     (input_dir / "20260608.md").write_text("# English day\n\nHello.\n", encoding="utf-8")
     (input_dir / "20260608_zh.md").write_text("# 中文日\n\n你好。\n", encoding="utf-8")
     (input_dir / "20260609.md").write_text("# Next day\n\nLater.\n", encoding="utf-8")
+    (input_dir / "20260609_zh.md").write_text("# 下一天\n\n稍后。\n", encoding="utf-8")
 
     out = tmp_path / "diary_html"
     DiaryBuilder(input_dir=input_dir, output_dir=out).build()
@@ -983,10 +984,18 @@ def test_diary_bilingual_and_day_nav(tmp_path):
     assert "中文" in en
     assert 'href="20260608.html"' in zh
     assert "English" in zh
+    assert "全部日记" in zh
+    assert "日记目录" in zh
+    assert 'lang="zh-Hans"' in zh
     assert 'href="20260609.html"' in en
     assert "Next day →" in en
     assert "← Previous day" not in en
     assert 'href="20260608.html"' in (out / "20260609.html").read_text(encoding="utf-8")
+
+    zh_next = (out / "20260609_zh.html").read_text(encoding="utf-8")
+    assert "← 前一天" in zh_next
+    assert 'href="20260608_zh.html"' in zh_next
+    assert "目录" in zh_next
 
     index = (out / "index.html").read_text(encoding="utf-8")
     assert index.count("20260608") >= 1

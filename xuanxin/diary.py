@@ -224,6 +224,7 @@ class DiaryBuilder:
         for item in processed:
             html_name = item["html_name"]
             nav = day_nav.get(html_name, {})
+            _base_date, page_lang = parse_diary_stem(item["stem"])
             html = renderer.render_diary_post(
                 {**item["result"], "content": item["content"]},
                 home_url=home_url,
@@ -232,6 +233,7 @@ class DiaryBuilder:
                 prev_href=nav.get("prev_href"),
                 next_href=nav.get("next_href"),
                 lang_links=language_links_for(html_name, alternates, item["stem"]),
+                lang=page_lang,
             )
             out_file = self.output_dir / html_name
             out_file.write_text(html, encoding="utf-8")

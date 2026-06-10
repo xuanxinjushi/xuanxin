@@ -7,6 +7,7 @@
 
   var items = document.querySelectorAll("[data-lang-entries]");
   var labels = { en: "English", zh: "中文" };
+  var uiByLang = window.XUANXIN_DIARY_UI || {};
 
   function pickEntry(entries, lang) {
     if (entries[lang]) return entries[lang];
@@ -23,13 +24,43 @@
     return langToggle.getAttribute("data-current-lang") || "en";
   }
 
+  function uiText(lang, key) {
+    var pack = uiByLang[lang];
+    return pack && pack[key] ? pack[key] : "";
+  }
+
+  function formatIndexCount(lang) {
+    var el = document.querySelector("[data-diary-index-count]");
+    if (!el) return;
+    var total = Number(el.getAttribute("data-total") || "0");
+    var page = Number(el.getAttribute("data-page") || "1");
+    var totalPages = Number(el.getAttribute("data-total-pages") || "1");
+    var unit = total === 1 ? uiText(lang, "entries_one") : uiText(lang, "entries_many");
+    var text = total + " " + unit;
+    if (totalPages > 1) {
+      text += uiText(lang, "page_of")
+        .replace("{page}", String(page))
+        .replace("{total}", String(totalPages));
+    }
+    el.textContent = text;
+  }
+
+  function applyChrome(lang) {
+    document.querySelectorAll("[data-diary-ui]").forEach(function (el) {
+      var key = el.getAttribute("data-diary-ui");
+      var text = uiText(lang, key);
+      if (text) el.textContent = text;
+    });
+    formatIndexCount(lang);
+  }
+
   function updateToggle(lang) {
     var target = otherLang(lang);
     langToggle.textContent = labels[target] || target.toUpperCase();
     langToggle.setAttribute("data-current-lang", lang);
     langToggle.setAttribute(
       "aria-label",
-      lang === "zh" ? "Switch to English" : "切换到中文"
+      uiText(lang, "switch_to").replace("{label}", labels[target] || target.toUpperCase())
     );
     document.documentElement.lang = lang === "zh" ? "zh-Hans" : "en";
     document.body.classList.toggle("diary-index-lang-zh", lang === "zh");
@@ -51,6 +82,7 @@
       link.setAttribute("href", row.href);
       if (titleEl && row.title) titleEl.textContent = row.title;
     });
+    applyChrome(lang);
     updateToggle(lang);
     try {
       sessionStorage.setItem("xuanxin-diary-index-lang", lang);

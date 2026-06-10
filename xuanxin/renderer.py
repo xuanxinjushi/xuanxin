@@ -115,18 +115,24 @@ class BlogRenderer:
         prev_href: str | None = None,
         next_href: str | None = None,
         lang_links: list[dict[str, Any]] | None = None,
+        lang: str = "en",
     ) -> str:
+        from xuanxin.diary_i18n import diary_ui, format_diary_date, html_lang_attr, switch_to_label
+
         meta = post["metadata"]
         use_math = meta.get("math", self.mathjax)
         content, page_count = paginate_content(post["content"])
         paginated = page_count > 1
+        ui = diary_ui(lang)
+        post_date = meta["date"]
         template = self.env.get_template("diary_post.html")
         return template.render(
             site_title=self.site_title,
             site_theme=self.theme,
             assets_prefix=self._assets_prefix(),
             title=meta["title"],
-            date=meta["date"],
+            date=post_date,
+            date_display=format_diary_date(post_date, lang) if post_date else None,
             description=meta["description"],
             content=content,
             theme=self._resolve_theme(meta),
@@ -140,6 +146,10 @@ class BlogRenderer:
             prev_href=prev_href,
             next_href=next_href,
             lang_links=lang_links or [],
+            lang=lang,
+            html_lang=html_lang_attr(lang),
+            ui=ui,
+            switch_to_label=switch_to_label,
         )
 
     def render_diary_index(
@@ -156,6 +166,8 @@ class BlogRenderer:
         next_href: str | None = None,
         index_langs: list[dict[str, Any]] | None = None,
     ) -> str:
+        from xuanxin.diary_i18n import DIARY_UI, diary_ui
+
         template = self.env.get_template("diary_index.html")
         return template.render(
             site_title=self.site_title,
@@ -171,6 +183,8 @@ class BlogRenderer:
             prev_href=prev_href,
             next_href=next_href,
             index_langs=index_langs or [],
+            ui=diary_ui("en"),
+            ui_all=DIARY_UI,
         )
 
     def render_index(self, posts: list[dict[str, Any]]) -> str:
