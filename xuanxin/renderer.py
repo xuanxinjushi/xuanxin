@@ -116,6 +116,8 @@ class BlogRenderer:
         next_href: str | None = None,
         lang_links: list[dict[str, Any]] | None = None,
         lang: str = "en",
+        entry_password: str = "",
+        entry_password_hash: str = "",
     ) -> str:
         from xuanxin.diary_i18n import diary_ui, format_diary_date, html_lang_attr, switch_to_label
 
@@ -150,6 +152,9 @@ class BlogRenderer:
             html_lang=html_lang_attr(lang),
             ui=ui,
             switch_to_label=switch_to_label,
+            entry_password=entry_password,
+            entry_password_hash=entry_password_hash,
+            entry_locked=bool(entry_password_hash),
         )
 
     def render_diary_index(

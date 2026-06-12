@@ -20,6 +20,38 @@ def _password_hash(password: str) -> str:
     return hashlib.sha256(password.encode("utf-8")).hexdigest()
 
 
+def password_hash(password: str) -> str:
+    """Public SHA-256 hex digest for a diary/gallery password."""
+    return _password_hash(password)
+
+
+def _encrypt_media_tags(block: str) -> str:
+    def repl_img(match: re.Match[str]) -> str:
+        pre, src, post = match.group(1), match.group(2), match.group(3)
+        enc = html.escape(f"{src}.enc", quote=True)
+        return (
+            f'<img{pre} class="xuanxin-encrypted-media" '
+            f'data-encrypted-src="{enc}" data-media-kind="image" hidden{post}>'
+        )
+
+    def repl_video(match: re.Match[str]) -> str:
+        pre, src, post = match.group(1), match.group(2), match.group(3)
+        enc = html.escape(f"{src}.enc", quote=True)
+        return (
+            f'<video{pre} class="xuanxin-gallery-video xuanxin-encrypted-media" controls '
+            'playsinline preload="metadata" '
+            f'data-encrypted-src="{enc}" data-media-kind="video" hidden{post}></video>'
+        )
+
+    block = re.sub(r'<img\b([^>]*?)\ssrc="([^"]+)"([^>]*)>', repl_img, block)
+    block = re.sub(
+        r'<video\b([^>]*?)\ssrc="([^"]+)"([^>]*)></video>',
+        repl_video,
+        block,
+    )
+    return block
+
+
 def _normalize_slide_html(html_fragment: str) -> str:
     html_fragment = html_fragment.strip()
     match = _P_WRAP_RE.match(html_fragment)
@@ -149,37 +181,18 @@ def collect_locked_gallery_assets(content: str) -> dict[str, str]:
     return assets
 
 
+def mark_encrypted_entry_media(page_html: str) -> str:
+    """Replace plaintext media URLs in a password-protected diary entry."""
+    return _encrypt_media_tags(page_html)
+
+
 def mark_encrypted_gallery_media(page_html: str) -> str:
     """Replace plaintext media URLs inside locked galleries with encrypted placeholders."""
 
     def replace_block(block: str) -> str:
         if "data-gallery-password-hash" not in block:
             return block
-
-        def repl_img(match: re.Match[str]) -> str:
-            pre, src, post = match.group(1), match.group(2), match.group(3)
-            enc = html.escape(f"{src}.enc", quote=True)
-            return (
-                f'<img{pre} class="xuanxin-encrypted-media" '
-                f'data-encrypted-src="{enc}" data-media-kind="image" hidden{post}>'
-            )
-
-        def repl_video(match: re.Match[str]) -> str:
-            pre, src, post = match.group(1), match.group(2), match.group(3)
-            enc = html.escape(f"{src}.enc", quote=True)
-            return (
-                f'<video{pre} class="xuanxin-gallery-video xuanxin-encrypted-media" controls '
-                'playsinline preload="metadata" '
-                f'data-encrypted-src="{enc}" data-media-kind="video" hidden{post}></video>'
-            )
-
-        block = re.sub(r'<img\b([^>]*?)\ssrc="([^"]+)"([^>]*)>', repl_img, block)
-        block = re.sub(
-            r'<video\b([^>]*?)\ssrc="([^"]+)"([^>]*)></video>',
-            repl_video,
-            block,
-        )
-        return block
+        return _encrypt_media_tags(block)
 
     parts = re.split(r'(<div class="xuanxin-gallery-lock"[\s\S]*?</div>\s*</div>)', page_html)
     if len(parts) == 1:

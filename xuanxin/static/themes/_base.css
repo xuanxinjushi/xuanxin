@@ -693,7 +693,15 @@ body.xuanxin-paginated .prose .fullpage-image.is-rotated-side img {
   overflow: hidden;
 }
 
-.prose .xuanxin-gallery-lock.is-unlocked .xuanxin-gallery-unlock {
+.prose .xuanxin-entry-lock {
+  margin: 1rem 0 0;
+  border: 1px solid color-mix(in srgb, var(--color-border, #cbd5e1) 80%, transparent);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.prose .xuanxin-gallery-lock.is-unlocked .xuanxin-gallery-unlock,
+.prose .xuanxin-entry-lock.is-unlocked .xuanxin-gallery-unlock {
   display: none;
 }
 

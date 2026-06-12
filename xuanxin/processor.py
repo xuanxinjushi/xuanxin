@@ -149,6 +149,7 @@ class MarkdownProcessor:
             "featured_image_url": raw.get("featured_image_url", ""),
             "theme": raw.get("theme", ""),
             "math": bool(raw.get("math", True)),
+            "password": str(raw.get("password", "")).strip().strip('"').strip("'"),
         }
 
     @staticmethod

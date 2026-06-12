@@ -25,7 +25,12 @@ from xuanxin.diary_i18n import (
     language_links_for,
     parse_diary_stem,
 )
-from xuanxin.gallery_sections import collect_locked_gallery_assets, mark_encrypted_gallery_media
+from xuanxin.gallery_sections import (
+    collect_locked_gallery_assets,
+    mark_encrypted_entry_media,
+    mark_encrypted_gallery_media,
+    password_hash,
+)
 from xuanxin.image_convert import converted_png_jpg_path
 from xuanxin.processor import MarkdownProcessor
 from xuanxin.renderer import BlogRenderer
@@ -71,8 +76,13 @@ def build_encrypt_paths(
     asset_paths: set[str],
     md_stem: str,
     input_dir: Path,
+    *,
+    entry_password: str = "",
 ) -> dict[str, str]:
-    """Map output asset paths to gallery passwords for encrypted publishing."""
+    """Map output asset paths to gallery or entry passwords for encrypted publishing."""
+    if entry_password:
+        return {path: entry_password for path in asset_paths}
+
     normalized = normalize_diary_asset_refs(raw_text, md_stem, input_dir)
     locked = collect_locked_gallery_assets(normalized)
     if not locked:
@@ -177,7 +187,14 @@ class DiaryBuilder:
                 continue
 
             asset_paths = collect_asset_paths(raw_text, result["content"])
-            encrypt_paths = build_encrypt_paths(raw_text, asset_paths, md_path.stem, self.input_dir)
+            entry_password = str(result["metadata"].get("password", "")).strip()
+            encrypt_paths = build_encrypt_paths(
+                raw_text,
+                asset_paths,
+                md_path.stem,
+                self.input_dir,
+                entry_password=entry_password,
+            )
             path_rewrites: dict[str, str] = {}
             copied, asset_rewrites = copy_assets(
                 asset_paths,
@@ -202,7 +219,9 @@ class DiaryBuilder:
             html_name = f"{md_path.stem}.html"
             out_file = self.output_dir / html_name
             content = rewrite_asset_paths(result["content"], path_rewrites)
-            if encrypt_paths:
+            if entry_password:
+                content = mark_encrypted_entry_media(content)
+            elif encrypt_paths:
                 content = mark_encrypted_gallery_media(content)
 
             processed.append(
@@ -213,6 +232,7 @@ class DiaryBuilder:
                     "date": result["metadata"]["date"],
                     "content": content,
                     "result": result,
+                    "entry_password": entry_password,
                 }
             )
 
@@ -234,6 +254,10 @@ class DiaryBuilder:
                 next_href=nav.get("next_href"),
                 lang_links=language_links_for(html_name, alternates, item["stem"]),
                 lang=page_lang,
+                entry_password=item.get("entry_password", ""),
+                entry_password_hash=password_hash(item["entry_password"])
+                if item.get("entry_password")
+                else "",
             )
             out_file = self.output_dir / html_name
             out_file.write_text(html, encoding="utf-8")

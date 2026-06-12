@@ -50,6 +50,19 @@
         {% endif %}
       </header>
 
+      {% if entry_locked %}
+      <div class="xuanxin-entry-lock" data-entry-lock data-entry-password-hash="{{ entry_password_hash }}">
+        <form class="xuanxin-gallery-unlock" data-entry-unlock>
+          <label class="xuanxin-gallery-unlock-label">{{ ui.entry_password }}</label>
+          <div class="xuanxin-gallery-unlock-row">
+            <input type="password" class="xuanxin-gallery-unlock-input" autocomplete="current-password" placeholder="Password" />
+            <button type="submit" class="xuanxin-gallery-unlock-btn">{{ ui.entry_unlock }}</button>
+          </div>
+          <p class="xuanxin-gallery-unlock-error" hidden>{{ ui.entry_password_wrong }}</p>
+        </form>
+        <div class="xuanxin-entry-body" data-entry-body hidden>
+      {% endif %}
+
       {% if paginated %}
       <nav class="page-nav" aria-label="Page navigation">
         <button type="button" class="page-nav-btn page-nav-prev" data-page-action="prev" aria-label="{{ ui.prev_page }}">←</button>
@@ -84,6 +97,10 @@
         <span class="chapter-nav-spacer"></span>
         {% endif %}
       </nav>
+      {% endif %}
+      {% if entry_locked %}
+        </div>
+      </div>
       {% endif %}
     </article>
   </main>

@@ -1040,6 +1040,30 @@ def test_diary_encrypts_locked_gallery_assets(tmp_path):
     assert decrypt_bytes(payload, "testpass") == b"secret-image-bytes"
 
 
+def test_diary_entry_password_frontmatter(tmp_path):
+    import hashlib
+
+    from xuanxin.diary import DiaryBuilder
+
+    input_dir = tmp_path / "diary_md"
+    input_dir.mkdir(parents=True)
+    (input_dir / "20260611_zh.md").write_text(
+        "---\ntitle: Secret day\npassword: xuanxin\n---\n\n# Hidden\n\nSecret body $x^2$.\n",
+        encoding="utf-8",
+    )
+
+    out = tmp_path / "diary_html"
+    DiaryBuilder(input_dir=input_dir, output_dir=out).build()
+
+    html = (out / "20260611_zh.html").read_text(encoding="utf-8")
+    expected_hash = hashlib.sha256(b"xuanxin").hexdigest()
+    assert 'data-entry-lock' in html
+    assert f'data-entry-password-hash="{expected_hash}"' in html
+    assert "Secret body" in html
+    assert 'data-entry-body hidden' in html
+    assert "篇目密码" in html
+
+
 def test_gallery_crypto_roundtrip():
     import pytest
     from cryptography.exceptions import InvalidTag
