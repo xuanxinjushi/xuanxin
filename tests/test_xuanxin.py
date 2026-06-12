@@ -35,7 +35,34 @@ def test_latex_preserved():
     content = "---\ntitle: Math\n---\n\n$x^2$ and $$\\sum_i x_i$$"
     result = process_string(content)
     assert "$x^2$" in result["content"]
-    assert "$$" in result["content"]
+    assert 'class="math-display"' in result["content"]
+    assert "$$\\sum_i x_i$$" in result["content"]
+    assert "<p>$$" not in result["content"]
+
+
+def test_autolink_bare_url():
+    md = (
+        "---\ntitle: Links\n---\n\n"
+        "- **CGFM** — example — https://arxiv.org/abs/2507.07192\n\n"
+        "See https://math4ai.org/ for more.\n"
+    )
+    result = process_string(md)
+    html = result["content"]
+    assert 'href="https://arxiv.org/abs/2507.07192"' in html
+    assert 'href="https://math4ai.org/"' in html
+
+
+def test_autolink_skips_code_and_math():
+    md = (
+        "---\ntitle: Skip\n---\n\n"
+        "`https://example.com/a` and $https://example.com/b$\n\n"
+        "```\nhttps://example.com/c\n```\n"
+    )
+    result = process_string(md)
+    html = result["content"]
+    assert html.count('href="https://example.com/a"') == 0
+    assert html.count('href="https://example.com/b"') == 0
+    assert html.count('href="https://example.com/c"') == 0
 
 
 def test_build_site(tmp_path):

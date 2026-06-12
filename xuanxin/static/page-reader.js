@@ -347,6 +347,12 @@
     window.history.replaceState(null, "", url);
   }
 
+  function typesetMath(nodes) {
+    if (!window.MathJax || !window.MathJax.typesetPromise) return;
+    var targets = nodes ? (Array.isArray(nodes) ? nodes : [nodes]) : undefined;
+    window.MathJax.typesetPromise(targets).catch(function () {});
+  }
+
   function showPage(pageNumber, hash) {
     if (!paginated) return;
     current = pageNumber;
@@ -362,6 +368,9 @@
     updateFullpageToolbar(pageNumber);
     if (reader) {
       reader.scrollIntoView({ block: "start", behavior: "smooth" });
+    }
+    if (pages[pageNumber - 1]) {
+      typesetMath([pages[pageNumber - 1]]);
     }
   }
 
@@ -621,9 +630,7 @@
         return "xuanxin-entry:" + window.location.pathname + ":" + hash;
       },
       afterUnlock: function (body) {
-        if (window.MathJax && window.MathJax.typesetPromise && body) {
-          window.MathJax.typesetPromise([body]).catch(function () {});
-        }
+        typesetMath(body);
       },
     });
   });

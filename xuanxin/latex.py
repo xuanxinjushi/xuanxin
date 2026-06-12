@@ -11,10 +11,8 @@ def protect_latex(content: str) -> tuple[str, list[dict[str, str]]]:
     processed = content
 
     def replace_display(match: re.Match[str]) -> str:
-        latex = match.group(1)
-        placeholder = f"<LATEX_DISPLAY_{len(latex_placeholders)}>"
-        latex_placeholders.append({"placeholder": placeholder, "content": f"$${latex}$$"})
-        return placeholder
+        latex = match.group(1).strip()
+        return f'\n<div class="math-display">\n$${latex}$$\n</div>\n'
 
     processed = re.sub(r"\$\$([\s\S]*?)\$\$", replace_display, processed)
 
