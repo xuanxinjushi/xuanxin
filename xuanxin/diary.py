@@ -172,7 +172,9 @@ class DiaryBuilder:
         renderer.copy_static_assets(self.output_dir, self.custom_css)
 
         md_files = sorted(
-            p for p in self.input_dir.glob("*.md") if p.is_file() and not p.name.startswith(".")
+            p
+            for p in self.input_dir.glob("*.md")
+            if p.is_file() and not p.name.startswith(".") and date_from_stem(p.stem) is not None
         )
 
         processed: list[dict[str, Any]] = []
@@ -317,7 +319,7 @@ class DiaryBuilder:
         meta = result["metadata"]
         base_date, _lang = parse_diary_stem(md_path.stem)
         file_date = date_from_stem(md_path.stem)
-        if file_date and "date" not in post.metadata:
+        if file_date:
             meta["date"] = file_date
         if meta["title"] == "Untitled" and file_date:
             meta["title"] = file_date.strftime("%B %d, %Y")

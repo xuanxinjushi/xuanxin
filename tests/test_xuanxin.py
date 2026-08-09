@@ -123,7 +123,7 @@ title: Chapter
 
 Intro.
 
-![](img/quan.jpg){.background .bottom-right alpha=0.3 width=40% bottom-offset=1.0in}
+![](img/quan.jpg){.background .bottom-right alpha=0.088888 width=40% bottom-offset=1.0in}
 
 More text.
 
@@ -167,7 +167,7 @@ def test_bottom_right_background_keeps_adjacent_paragraphs_together():
 
 村子不大，
 
-![](img/quan.jpg){.background .bottom-right alpha=0.3 width=40% bottom-offset=1.0in}
+![](img/quan.jpg){.background .bottom-right alpha=0.088888 width=40% bottom-offset=1.0in}
 
 十几户人家。
 """
@@ -763,6 +763,26 @@ def test_date_from_stem():
     assert date_from_stem("not-a-date") is None
     assert normalize_home_url("wu-99.com") == "https://wu-99.com"
     assert normalize_home_url("https://example.com") == "https://example.com"
+
+
+def test_diary_index_sorts_by_filename_date_not_frontmatter(tmp_path):
+    from xuanxin.diary import DiaryBuilder
+
+    input_dir = tmp_path / "diary_md"
+    input_dir.mkdir()
+    (input_dir / "20260611.md").write_text(
+        '---\ntitle: Newest\ndate: "2025-06-11"\n---\n\nBody.\n',
+        encoding="utf-8",
+    )
+    (input_dir / "20260609.md").write_text("# Older\n\nEarlier.\n", encoding="utf-8")
+
+    out = tmp_path / "diary_html"
+    DiaryBuilder(input_dir=input_dir, output_dir=out).build()
+
+    index = (out / "index.html").read_text(encoding="utf-8")
+    assert index.index("20260611.html") < index.index("20260609.html")
+    assert "2026-06-11" in index
+    assert "2025-06-11" not in index
 
 
 def test_build_diary(tmp_path):
