@@ -459,8 +459,7 @@ body.xuanxin-paginated .prose .fullpage-image.is-rotated-side img {
 
 .prose a {
   color: var(--color-primary);
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  text-decoration: none;
 }
 
 .prose a:hover { color: var(--color-primary-hover); }
