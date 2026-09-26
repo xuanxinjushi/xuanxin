@@ -113,3 +113,21 @@ def _autolink_html_segment(text: str) -> str:
         return f'<a href="{url}">{url}</a>{extra}'
 
     return _URL_RE.sub(repl, text)
+
+
+_EXTERNAL_A_RE = re.compile(r"<a\s[^>]*href=[\"']https?://[^>]*>", re.IGNORECASE)
+
+
+def open_external_links_in_new_tab(html: str) -> str:
+    """Add ``target="_blank"`` to external http(s) anchors lacking a target."""
+
+    def repl(match: re.Match[str]) -> str:
+        tag = match.group(0)
+        if re.search(r"\starget\s*=", tag, re.IGNORECASE):
+            return tag
+        extra = ' target="_blank"'
+        if not re.search(r"\srel\s*=", tag, re.IGNORECASE):
+            extra += ' rel="noopener noreferrer"'
+        return tag[:-1] + extra + ">"
+
+    return _EXTERNAL_A_RE.sub(repl, html)

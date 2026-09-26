@@ -10,7 +10,7 @@ from typing import Any
 import frontmatter
 import markdown
 
-from xuanxin.autolink import autolink_html
+from xuanxin.autolink import autolink_html, open_external_links_in_new_tab
 from xuanxin.extensions import (
     BackslashBlankLineExtension,
     ImageAttributesExtension,
@@ -126,6 +126,7 @@ class MarkdownProcessor:
         html = self._md.convert(protected)
         html = restore_latex(html, placeholders)
         html = autolink_html(html)
+        html = open_external_links_in_new_tab(html)
         html = reorder_footnotes_before_chapter_poster(html)
         html = inject_section_nav(html)
         self._md.reset()
@@ -187,6 +188,7 @@ class MarkdownProcessor:
         html = self._md.convert(protected)
         html = restore_latex(html, placeholders)
         html = autolink_html(html)
+        html = open_external_links_in_new_tab(html)
         self._md.reset()
         return html
 
