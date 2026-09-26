@@ -80,7 +80,8 @@
       var row = pickEntry(entries, lang);
       if (!row) return;
       link.setAttribute("href", row.href);
-      if (titleEl && row.title) titleEl.textContent = row.title;
+      if (titleEl && row.title_html) titleEl.innerHTML = row.title_html;
+      else if (titleEl && row.title) titleEl.textContent = row.title;
     });
     applyChrome(lang);
     updateToggle(lang);

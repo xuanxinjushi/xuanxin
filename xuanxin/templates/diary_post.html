@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ title }}</title>
+  <title>{{ title | title_plain }}</title>
   {% if description %}<meta name="description" content="{{ description }}">{% endif %}
   {% if gtag_snippet %}{{ gtag_snippet | safe }}{% endif %}
   <link rel="stylesheet" href="{{ assets_prefix }}assets/theme.css">
@@ -46,7 +46,7 @@
   <main class="container">
     <article class="post{% if paginated %} post-paginated{% endif %}">
       <header class="post-header">
-        <h1 class="post-title">{{ title }}</h1>
+        <h1 class="post-title">{{ title | title_html }}</h1>
         {% if date %}
         <div class="post-meta">
           <time datetime="{{ date.isoformat() }}">{{ date_display }}</time>

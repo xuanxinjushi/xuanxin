@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% if site_title %}{{ title }} — {{ site_title }}{% else %}{{ title }}{% endif %}</title>
+  <title>{% if site_title %}{{ title | title_plain }} — {{ site_title }}{% else %}{{ title | title_plain }}{% endif %}</title>
   {% if description %}<meta name="description" content="{{ description }}">{% endif %}
   <link rel="stylesheet" href="{{ assets_prefix }}assets/theme.css">
   {% if theme and theme != site_theme %}<link rel="stylesheet" href="{{ assets_prefix }}assets/themes/{{ theme }}.css">{% endif %}
@@ -43,13 +43,13 @@
     {% if book_mode %}
     <nav class="chapter-nav chapter-nav-top" aria-label="Chapter navigation">
       {% if prev_href %}
-      <a class="chapter-nav-prev" href="{{ prev_href }}">← {{ prev_title }}</a>
+      <a class="chapter-nav-prev" href="{{ prev_href }}">← {{ prev_title | title_html }}</a>
       {% else %}
       <span class="chapter-nav-spacer"></span>
       {% endif %}
       <a class="chapter-nav-index" href="index.html">Contents</a>
       {% if next_href %}
-      <a class="chapter-nav-next" href="{{ next_href }}">{{ next_title }} →</a>
+      <a class="chapter-nav-next" href="{{ next_href }}">{{ next_title | title_html }} →</a>
       {% else %}
       <span class="chapter-nav-spacer"></span>
       {% endif %}
@@ -58,7 +58,7 @@
 
     <article class="post{% if paginated %} post-paginated{% endif %}">
       <header class="post-header">
-        <h1 class="post-title">{{ title }}</h1>
+        <h1 class="post-title">{{ title | title_html }}</h1>
         {% if not book_mode %}
         <div class="post-meta">
           {% if date %}<time datetime="{{ date.isoformat() }}">{{ date.strftime('%B %d, %Y') }}</time>{% endif %}
@@ -75,7 +75,7 @@
         {% endif %}
         {% if featured_image_url %}
         <figure class="post-featured">
-          <img src="{{ featured_image_url }}" alt="{{ title }}">
+          <img src="{{ featured_image_url }}" alt="{{ title | title_plain }}">
         </figure>
         {% endif %}
       </header>
@@ -104,13 +104,13 @@
     {% if book_mode %}
     <nav class="chapter-nav chapter-nav-bottom" aria-label="Chapter navigation">
       {% if prev_href %}
-      <a class="chapter-nav-prev" href="{{ prev_href }}">← {{ prev_title }}</a>
+      <a class="chapter-nav-prev" href="{{ prev_href }}">← {{ prev_title | title_html }}</a>
       {% else %}
       <span class="chapter-nav-spacer"></span>
       {% endif %}
       <a class="chapter-nav-index" href="index.html">Contents</a>
       {% if next_href %}
-      <a class="chapter-nav-next" href="{{ next_href }}">{{ next_title }} →</a>
+      <a class="chapter-nav-next" href="{{ next_href }}">{{ next_title | title_html }} →</a>
       {% else %}
       <span class="chapter-nav-spacer"></span>
       {% endif %}

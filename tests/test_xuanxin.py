@@ -1123,3 +1123,16 @@ def test_gallery_crypto_roundtrip():
     assert decrypt_bytes(blob, "pw") == plain
     with pytest.raises(InvalidTag):
         decrypt_bytes(blob, "wrong")
+
+
+def test_title_inline_markdown():
+    from xuanxin.title_markup import title_html, title_plain
+
+    raw = "Singular *They*：Everyone 碰上 Their"
+    assert str(title_html(raw)) == "Singular <em>They</em>：Everyone 碰上 Their"
+    assert title_plain(raw) == "Singular They：Everyone 碰上 Their"
+    assert str(title_html("**A** & `x*y*` <b>")) == (
+        "<strong>A</strong> &amp; <code>x*y*</code> &lt;b&gt;"
+    )
+    assert str(title_html("2 * 3 * 4")) == "2 * 3 * 4"
+    assert title_plain("1. Foo") == "1. Foo"

@@ -6,6 +6,8 @@ import re
 from datetime import datetime
 from typing import Any
 
+from xuanxin.title_markup import title_html
+
 _DIARY_STEM_RE = re.compile(r"^(\d{8})(?:_([a-z]{2}))?$")
 
 LANG_LABELS = {
@@ -156,6 +158,7 @@ def build_alternates_meta(
         meta.setdefault(base_date, {})[lang] = {
             "href": item["html_name"],
             "title": item["title"],
+            "title_html": str(title_html(item["title"])),
         }
     return meta
 

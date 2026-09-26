@@ -10,6 +10,7 @@ from typing import Any
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from xuanxin.paginate import paginate_content
+from xuanxin.title_markup import title_html, title_plain
 
 
 PACKAGE_DIR = Path(__file__).resolve().parent
@@ -42,6 +43,8 @@ class BlogRenderer:
             loader=FileSystemLoader(str(tpl_dir)),
             autoescape=select_autoescape(["html", "xml"]),
         )
+        self.env.filters["title_html"] = title_html
+        self.env.filters["title_plain"] = title_plain
 
     def _assets_prefix(self) -> str:
         return f"{self.base_url}/" if self.base_url else ""

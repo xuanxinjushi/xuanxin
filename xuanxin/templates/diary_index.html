@@ -56,7 +56,7 @@
         <li class="book-toc-item"{% if entry.lang_entries %} data-lang-entries='{{ entry.lang_entries | tojson }}'{% endif %}>
           <a href="{{ entry.href }}" data-diary-entry-link>
             {% if entry.date %}<time datetime="{{ entry.date.isoformat() }}">{{ entry.date.strftime('%Y-%m-%d') }}</time> — {% endif %}
-            <span data-diary-entry-title>{{ entry.title }}</span>
+            <span data-diary-entry-title>{{ entry.title | title_html }}</span>
           </a>
         </li>
         {% else %}

@@ -25,7 +25,7 @@
     <div class="post-list">
       {% for post in posts %}
       <article class="post-card">
-        <h2><a href="{{ post.url }}">{{ post.title }}</a></h2>
+        <h2><a href="{{ post.url }}">{{ post.title | title_html }}</a></h2>
         <div class="post-meta">
           {% if post.date %}<time datetime="{{ post.date.isoformat() }}">{{ post.date.strftime('%B %d, %Y') }}</time>{% endif %}
           {% if post.author %}<span class="post-author">{{ post.author }}</span>{% endif %}

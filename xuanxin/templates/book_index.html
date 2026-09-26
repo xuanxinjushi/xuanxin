@@ -28,7 +28,7 @@
       <ol class="book-toc-list">
         {% for ch in chapters %}
         <li class="book-toc-item">
-          <a href="{{ ch.href }}">{{ ch.title }}</a>
+          <a href="{{ ch.href }}">{{ ch.title | title_html }}</a>
         </li>
         {% endfor %}
       </ol>
