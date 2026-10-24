@@ -110,6 +110,7 @@ def cmd_diary(args: argparse.Namespace) -> int:
         input_dir=Path(args.input),
         output_dir=Path(args.output),
         home_url=args.home,
+        site_url=args.site_url,
         gtag_path=gtag,
         site_title=args.title,
         theme=args.theme,
@@ -213,6 +214,11 @@ def main(argv: list[str] | None = None) -> int:
     diary.add_argument("-o", "--output", required=True, help="Output folder for HTML")
     diary.add_argument("-gtag", default="", help="Path to gtag.js snippet to inject in <head>")
     diary.add_argument("-home", default="", help="Home URL for back links (e.g. wu-99.com)")
+    diary.add_argument(
+        "--site-url",
+        default="",
+        help="Public URL of the diary output (e.g. https://wu-99.com/diary) for og:url/og:image link previews",
+    )
     diary.add_argument("-t", "--title", default="Diary", help="Diary index title")
     diary.add_argument(
         "--page-size",

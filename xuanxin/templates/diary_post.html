@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ title | title_plain }}</title>
   {% if description %}<meta name="description" content="{{ description }}">{% endif %}
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="{{ title | title_plain }}">
+  {% if og.description %}<meta property="og:description" content="{{ og.description }}">{% endif %}
+  {% if og.url %}<meta property="og:url" content="{{ og.url }}"><link rel="canonical" href="{{ og.url }}">{% endif %}
+  {% if og.image %}<meta property="og:image" content="{{ og.image }}">{% endif %}
+  {% if date %}<meta property="article:published_time" content="{{ date.strftime('%Y-%m-%d') }}">{% endif %}
+  <meta name="twitter:card" content="{{ 'summary_large_image' if og.image else 'summary' }}">
   {% if gtag_snippet %}{{ gtag_snippet | safe }}{% endif %}
   <link rel="stylesheet" href="{{ assets_prefix }}assets/theme.css">
   {% if theme and theme != site_theme %}<link rel="stylesheet" href="{{ assets_prefix }}assets/themes/{{ theme }}.css">{% endif %}

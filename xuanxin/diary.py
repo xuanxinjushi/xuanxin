@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import html as html_lib
 import math
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urljoin
 
 import frontmatter
 
@@ -38,7 +40,13 @@ from xuanxin.renderer import BlogRenderer
 _DATE_STEM_RE = re.compile(r"^(\d{4})(\d{2})(\d{2})$")
 _INDEX_PAGE_RE = re.compile(r"^index-(\d+)\.html$")
 _DIARY_IMAGE_RE = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
+_IMG_SRC_RE = re.compile(r'<img\b[^>]*?(?<![-\w])src="([^"]+)"')
+_HEADING_RE = re.compile(r"<h([1-6])\b[^>]*>[\s\S]*?</h\1>")
+_BLOCK_TAG_RE = re.compile(r"<(?:br|/p|/li|/div|/blockquote|/td|/th|/tr|/pre)\b[^>]*>")
+_TAG_RE = re.compile(r"<[^>]+>")
+_MATH_RE = re.compile(r"\$\$[\s\S]*?\$\$|\$[^$\n]*\$")
 DEFAULT_INDEX_PAGE_SIZE = 20
+OG_DESCRIPTION_LEN = 160
 
 
 def asset_dir_name(stem: str) -> str:
@@ -125,6 +133,39 @@ def normalize_home_url(url: str) -> str:
     return url
 
 
+def content_excerpt(content_html: str, limit: int = OG_DESCRIPTION_LEN) -> str:
+    """Plain-text summary of rendered entry HTML, skipping headings and math."""
+    text = _BLOCK_TAG_RE.sub(" ", _HEADING_RE.sub(" ", content_html))
+    text = html_lib.unescape(_TAG_RE.sub("", text))
+    text = " ".join(_MATH_RE.sub(" ", text).split())
+    if len(text) <= limit:
+        return text
+    return text[: limit - 1].rstrip() + "…"
+
+
+def build_og_meta(
+    content_html: str,
+    meta: dict[str, Any],
+    html_name: str,
+    site_url: str = "",
+    locked: bool = False,
+) -> dict[str, str]:
+    """Open Graph fields for link previews (LinkedIn, X, WeChat, Slack)."""
+    base = site_url.rstrip("/") + "/" if site_url else ""
+    og: dict[str, str] = {"url": urljoin(base, html_name) if base else ""}
+    og["description"] = str(meta.get("description") or "") or (
+        "" if locked else content_excerpt(content_html)
+    )
+    image = str(meta.get("image") or "")
+    if not image and not locked:
+        match = _IMG_SRC_RE.search(content_html)
+        image = html_lib.unescape(match.group(1)) if match else ""
+    if image and not re.match(r"^https?://", image):
+        image = urljoin(base, image) if base else ""
+    og["image"] = image
+    return og
+
+
 def diary_index_filename(page: int) -> str:
     """Return the HTML filename for a diary index page (1-based)."""
     if page <= 1:
@@ -146,6 +187,7 @@ class DiaryBuilder:
     input_dir: Path
     output_dir: Path
     home_url: str = ""
+    site_url: str = ""
     gtag_path: Path | None = None
     site_title: str = "Diary"
     theme: str = "default"
@@ -247,6 +289,13 @@ class DiaryBuilder:
             html_name = item["html_name"]
             nav = day_nav.get(html_name, {})
             _base_date, page_lang = parse_diary_stem(item["stem"])
+            og = build_og_meta(
+                item["content"],
+                item["result"]["metadata"],
+                html_name,
+                site_url=self.site_url,
+                locked=bool(item.get("entry_password")),
+            )
             html = renderer.render_diary_post(
                 {**item["result"], "content": item["content"]},
                 home_url=home_url,
@@ -260,6 +309,7 @@ class DiaryBuilder:
                 entry_password_hash=password_hash(item["entry_password"])
                 if item.get("entry_password")
                 else "",
+                og=og,
             )
             out_file = self.output_dir / html_name
             out_file.write_text(html, encoding="utf-8")

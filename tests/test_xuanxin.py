@@ -1136,3 +1136,33 @@ def test_title_inline_markdown():
     )
     assert str(title_html("2 * 3 * 4")) == "2 * 3 * 4"
     assert title_plain("1. Foo") == "1. Foo"
+
+
+def test_diary_open_graph_meta(tmp_path):
+    from xuanxin.diary import DiaryBuilder
+
+    input_dir = tmp_path / "diary_md"
+    (input_dir / "20260609").mkdir(parents=True)
+    (input_dir / "20260609" / "photo.jpg").write_bytes(b"\xff\xd8\xff\xd9")
+    (input_dir / "20260609.md").write_text(
+        "# A Day\n\nFirst line with $x_t$ math & more.\n\n![](20260609/photo.jpg)\n",
+        encoding="utf-8",
+    )
+    (input_dir / "20260610.md").write_text(
+        "---\npassword: pw\n---\n\n# Locked\n\nSecret.\n\n![](20260609/photo.jpg)\n",
+        encoding="utf-8",
+    )
+
+    out = tmp_path / "diary_html"
+    DiaryBuilder(input_dir=input_dir, output_dir=out, site_url="https://example.com/diary/").build()
+
+    html = (out / "20260609.html").read_text(encoding="utf-8")
+    assert '<meta property="og:title" content="A Day">' in html
+    assert '<meta property="og:url" content="https://example.com/diary/20260609.html">' in html
+    assert '<meta property="og:image" content="https://example.com/diary/20260609/photo.jpg">' in html
+    assert '<meta property="og:description" content="First line with math &amp; more.">' in html
+
+    locked = (out / "20260610.html").read_text(encoding="utf-8")
+    assert "og:image" not in locked
+    assert "og:description" not in locked
+    assert "Secret" not in locked.split("</head>")[0]

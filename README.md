@@ -61,7 +61,14 @@ xuanxin themes
 
 # Diary site (dated .md files → flat HTML, paginated index)
 xuanxin diary -i input_folder -o output_folder -gtag gtag.js -home wu-99.com --page-size 20
+
+# Same, with link previews (og:url / og:image need the public URL of the output folder)
+xuanxin diary -i input_folder -o output_folder -home wu-99.com --site-url https://wu-99.com/diary
 ```
+
+Diary entries get Open Graph tags for LinkedIn/X/Slack previews: `og:title`, `og:description`
+(frontmatter `description`, else an excerpt), and `og:image` (frontmatter `image`, else the first
+image in the entry). Password-protected entries get no image or excerpt.
 
 ## Customize styles (3 ways)
 
