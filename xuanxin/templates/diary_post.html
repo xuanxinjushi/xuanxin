@@ -30,6 +30,7 @@
   <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
   {% endif %}
   <script src="{{ assets_prefix }}assets/page-reader.js" defer></script>
+  {% if not entry_locked %}<script src="{{ assets_prefix }}assets/share.js" defer></script>{% endif %}
 </head>
 <body{% if paginated %} class="xuanxin-paginated"{% endif %}>
   <header class="site-header">
@@ -92,6 +93,21 @@
         <span class="page-nav-indicator"><span data-page-current>1</span> / <span data-page-total>{{ page_count }}</span></span>
         <button type="button" class="page-nav-btn page-nav-next" data-page-action="next" aria-label="{{ ui.next_page }}">{{ ui.next_page }}</button>
       </nav>
+      {% endif %}
+
+      {% if not entry_locked %}
+      <div class="diary-share" data-share data-share-url="{{ og.url }}" data-share-title="{{ title | title_plain }}" data-copied-label="{{ ui.share_copied }}" data-qr-src="{{ assets_prefix }}assets/qrcode.js">
+        <span class="diary-share-label">{{ ui.share }}</span>
+        <a class="diary-share-btn" data-share-linkedin target="_blank" rel="noopener"{% if og.url %} href="https://www.linkedin.com/sharing/share-offsite/?url={{ og.url | urlencode }}"{% endif %}>LinkedIn</a>
+        <a class="diary-share-btn" data-share-x target="_blank" rel="noopener"{% if og.url %} href="https://twitter.com/intent/tweet?url={{ og.url | urlencode }}"{% endif %}>X</a>
+        <button type="button" class="diary-share-btn" data-share-wechat aria-expanded="false">{{ ui.share_wechat }}</button>
+        <button type="button" class="diary-share-btn" data-share-copy>{{ ui.share_copy }}</button>
+        <button type="button" class="diary-share-btn" data-share-native hidden>{{ ui.share_more }}</button>
+        <div class="diary-share-qr" data-share-qr hidden>
+          <div class="diary-share-qr-code" data-share-qr-code></div>
+          <p>{{ ui.share_wechat_hint }}</p>
+        </div>
+      </div>
       {% endif %}
 
       {% if prev_href or next_href %}

@@ -444,6 +444,7 @@ body.xuanxin-paginated .prose .fullpage-image.is-rotated-side img {
 
   .page-nav,
   .chapter-nav,
+  .diary-share,
   .xuanxin-section-nav,
   .xuanxin-fullpage-controls,
   .xuanxin-fullpage-lightbox {
@@ -1324,6 +1325,48 @@ body.xuanxin-has-section-nav .site-footer {
   padding-top: 1rem;
   border-top: 1px solid color-mix(in srgb, var(--color-border, #cbd5e1) 80%, transparent);
 }
+
+/* Diary share bar */
+.diary-share {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  font-size: 0.88rem;
+}
+.diary-share-label { color: var(--color-text-muted); margin-right: 0.25rem; }
+.diary-share-btn {
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0.3rem 0.85rem;
+  cursor: pointer;
+  text-decoration: none;
+  line-height: 1.3;
+}
+.diary-share-btn:hover { color: var(--color-primary); border-color: var(--color-primary); }
+.diary-share-btn[hidden] { display: none; }
+.diary-share-qr {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 0;
+  z-index: 10;
+  width: 13rem;
+  padding: 0.85rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px var(--color-shadow-hover);
+  text-align: center;
+}
+.diary-share-qr[hidden] { display: none; }
+.diary-share-qr-code { background: #fff; padding: 0.25rem; border-radius: 4px; }
+.diary-share-qr-code svg { display: block; width: 100%; height: auto; }
+.diary-share-qr p { margin: 0.6rem 0 0; font-size: 0.8rem; color: var(--color-text-muted); }
 
 /* Chapter prev/next navigation */
 .chapter-nav {

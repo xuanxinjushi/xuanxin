@@ -1166,3 +1166,33 @@ def test_diary_open_graph_meta(tmp_path):
     assert "og:image" not in locked
     assert "og:description" not in locked
     assert "Secret" not in locked.split("</head>")[0]
+
+
+def test_diary_share_bar(tmp_path):
+    from xuanxin.diary import DiaryBuilder
+
+    input_dir = tmp_path / "diary_md"
+    input_dir.mkdir()
+    (input_dir / "20260609.md").write_text("# A Day\n\nHello.\n", encoding="utf-8")
+    (input_dir / "20260610_zh.md").write_text("# 一天\n\n你好。\n", encoding="utf-8")
+    (input_dir / "20260611.md").write_text("---\npassword: pw\n---\n\n# Locked\n", encoding="utf-8")
+
+    out = tmp_path / "diary_html"
+    DiaryBuilder(input_dir=input_dir, output_dir=out, site_url="https://example.com/diary").build()
+
+    html = (out / "20260609.html").read_text(encoding="utf-8")
+    assert 'data-share-url="https://example.com/diary/20260609.html"' in html
+    assert (
+        'href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A//example.com/diary/20260609.html"'
+        in html
+    )
+    assert "assets/share.js" in html
+    assert (out / "assets" / "share.js").exists()
+    assert (out / "assets" / "qrcode.js").exists()
+
+    zh = (out / "20260610_zh.html").read_text(encoding="utf-8")
+    assert "分享到朋友圈" in zh
+
+    locked = (out / "20260611.html").read_text(encoding="utf-8")
+    assert "data-share" not in locked
+    assert "share.js" not in locked

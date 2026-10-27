@@ -37,6 +37,12 @@ DIARY_UI: dict[str, dict[str, str]] = {
         "entries_many": "entries",
         "page_of": "· page {page} of {total}",
         "no_entries": "No diary entries yet.",
+        "share": "Share",
+        "share_wechat": "WeChat",
+        "share_wechat_hint": "Scan with WeChat, then share to Moments",
+        "share_copy": "Copy link",
+        "share_copied": "Copied",
+        "share_more": "More…",
     },
     "zh": {
         "html_lang": "zh-Hans",
@@ -59,6 +65,12 @@ DIARY_UI: dict[str, dict[str, str]] = {
         "entries_many": "篇",
         "page_of": "· 第 {page} / {total} 页",
         "no_entries": "还没有日记。",
+        "share": "分享",
+        "share_wechat": "微信",
+        "share_wechat_hint": "微信扫一扫，然后分享到朋友圈",
+        "share_copy": "复制链接",
+        "share_copied": "已复制",
+        "share_more": "更多…",
     },
 }
 

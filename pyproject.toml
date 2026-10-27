@@ -38,4 +38,4 @@ where = ["."]
 include = ["xuanxin*"]
 
 [tool.setuptools.package-data]
-xuanxin = ["templates/*", "static/themes/*", "static/page-reader.js", "static/diary-index.js"]
+xuanxin = ["templates/*", "static/themes/*", "static/page-reader.js", "static/diary-index.js", "static/share.js", "static/qrcode.js"]

@@ -269,3 +269,8 @@ class BlogRenderer:
         diary_index_js = PACKAGE_DIR / "static" / "diary-index.js"
         if diary_index_js.exists():
             shutil.copy2(diary_index_js, assets / "diary-index.js")
+
+        for name in ("share.js", "qrcode.js"):
+            script = PACKAGE_DIR / "static" / name
+            if script.exists():
+                shutil.copy2(script, assets / name)

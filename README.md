@@ -70,6 +70,10 @@ Diary entries get Open Graph tags for LinkedIn/X/Slack previews: `og:title`, `og
 (frontmatter `description`, else an excerpt), and `og:image` (frontmatter `image`, else the first
 image in the entry). Password-protected entries get no image or excerpt.
 
+Each unlocked entry also ends with a share bar: LinkedIn, X, WeChat (a QR code generated in the
+browser — scan it, then share to Moments from WeChat), copy link, and the system share sheet on
+devices that support it.
+
 ## Customize styles (3 ways)
 
 ### 1. Built-in themes
